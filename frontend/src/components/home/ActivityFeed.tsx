@@ -5,7 +5,7 @@ import { timeAgo } from '../../lib/utils';
 
 interface ActivityEvent {
   id: string;
-  type: 'completed' | 'submitted' | 'posted' | 'review';
+  type: 'completed' | 'submitted' | 'posted' | 'review' | 'paid';
   username: string;
   avatar_url?: string | null;
   detail: string;
@@ -50,6 +50,7 @@ function getActionText(type: ActivityEvent['type']) {
     case 'submitted': return 'submitted';
     case 'posted': return 'posted';
     case 'review': return 'AI Review passed for';
+    case 'paid': return 'paid out';
     default: return 'updated';
   }
 }
@@ -75,13 +76,17 @@ function EventItem({ event }: { event: ActivityEvent }) {
   );
 }
 
-export function ActivityFeed({ events }: { events?: ActivityEvent[] }) {
-  const displayEvents = events?.length ? events.slice(0, 4) : MOCK_EVENTS;
+export function ActivityFeed({ events, isLoading }: { events?: ActivityEvent[]; isLoading?: boolean }) {
+  // Show real events when available and non-empty.
+  // While loading (API not yet responded), show mock data as placeholder.
+  // When API returns an empty array, show "No recent activity".
+  const isEmpty = !isLoading && events !== undefined && events.length === 0;
+  const displayEvents = isEmpty ? [] : ((events && events.length > 0) ? events : MOCK_EVENTS).slice(0, 4);
   const [visibleEvents, setVisibleEvents] = useState<ActivityEvent[]>(displayEvents.slice(0, 4));
 
   useEffect(() => {
     setVisibleEvents(displayEvents.slice(0, 4));
-  }, [events]);
+  }, [events, isLoading]);
 
   return (
     <section className="w-full border-y border-border bg-forge-900/50 py-4 overflow-hidden">
@@ -91,20 +96,24 @@ export function ActivityFeed({ events }: { events?: ActivityEvent[] }) {
           <span className="font-mono text-xs text-text-muted uppercase tracking-wider">Recent Activity</span>
         </div>
         <div className="space-y-1">
-          <AnimatePresence mode="popLayout">
-            {visibleEvents.map((event) => (
-              <motion.div
-                key={event.id}
-                variants={slideInRight}
-                initial="initial"
-                animate="animate"
-                exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
-                layout
-              >
-                <EventItem event={event} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          {isEmpty ? (
+            <p className="text-sm text-text-muted px-3 py-2">No recent activity</p>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {visibleEvents.map((event) => (
+                <motion.div
+                  key={event.id}
+                  variants={slideInRight}
+                  initial="initial"
+                  animate="animate"
+                  exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+                  layout
+                >
+                  <EventItem event={event} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
         </div>
       </div>
     </section>
