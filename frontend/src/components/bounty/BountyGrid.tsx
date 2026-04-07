@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronDown, Loader2, Plus, Search, X } from 'lucide-react';
@@ -13,14 +13,27 @@ export function BountyGrid() {
   const [statusFilter, setStatusFilter] = useState<string>('open');
   const [searchInput, setSearchInput] = useState<string>('');
   const [debouncedQuery, setDebouncedQuery] = useState<string>('');
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounce search input by 300ms
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
       setDebouncedQuery(searchInput.trim().toLowerCase());
     }, 300);
-    return () => clearTimeout(timer);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
   }, [searchInput]);
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setDebouncedQuery('');
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+      debounceTimer.current = null;
+    }
+  };
 
   const params = {
     status: statusFilter,
@@ -58,11 +71,12 @@ export function BountyGrid() {
                 placeholder="Search bounties..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
+                aria-label="Search bounties by title, description, or skill"
                 className="pl-9 pr-8 py-1.5 bg-forge-800 border border-border rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:border-emerald outline-none transition-colors duration-150 w-48 focus:w-64"
               />
               {searchInput && (
                 <button
-                  onClick={() => setSearchInput('')}
+                  onClick={handleClearSearch}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
                   aria-label="Clear search"
                 >
