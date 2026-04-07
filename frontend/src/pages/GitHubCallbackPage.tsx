@@ -25,6 +25,16 @@ export function GitHubCallbackPage() {
       return;
     }
 
+    // Validate CSRF state
+    const storedState = sessionStorage.getItem('oauth_state');
+    if (state !== storedState) {
+      console.error('[GitHubCallback] CSRF state mismatch — possible attack');
+      sessionStorage.removeItem('oauth_state');
+      navigate('/', { replace: true });
+      return;
+    }
+    sessionStorage.removeItem('oauth_state');
+
     exchangeGitHubCode(code, state ?? undefined)
       .then((response) => {
         // Store tokens + user in auth context

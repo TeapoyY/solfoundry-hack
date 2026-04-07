@@ -4,6 +4,7 @@
  */
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { setAuthToken, setOnAuthExpired } from '../services/apiClient';
+import { logout as apiLogout } from '../api/auth';
 
 export interface AuthUser {
   id: string;
@@ -75,11 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState({ user, accessToken, refreshToken, isAuthenticated: true, isLoading: false });
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_KEY);
-    localStorage.removeItem(USER_KEY);
-    setAuthToken(null);
+  const logout = useCallback(async () => {
+    await apiLogout();
     setState({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false, isLoading: false });
   }, []);
 

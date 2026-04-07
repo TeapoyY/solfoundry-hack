@@ -1,4 +1,4 @@
-import { apiClient } from '../services/apiClient';
+import { apiClient, setAuthToken, ApiError } from '../services/apiClient';
 import type { User } from '../types/user';
 
 export interface AuthTokens {
@@ -25,8 +25,13 @@ export function buildGitHubAuthorizeUrl(
   state?: string,
 ): string {
   const cid = clientId ?? import.meta.env?.VITE_GITHUB_CLIENT_ID ?? '';
+  if (!cid) {
+    throw new Error('Missing GitHub OAuth client configuration: VITE_GITHUB_CLIENT_ID is not set');
+  }
   const uri = redirectUri ?? `${window.location.origin}/github/callback`;
   const csrf = state ?? generateState();
+  // Persist CSRF state for validation in callback
+  sessionStorage.setItem('oauth_state', csrf);
   const params = new URLSearchParams({
     client_id: cid,
     redirect_uri: uri,
@@ -57,9 +62,20 @@ export async function getGitHubAuthorizeUrl(): Promise<string> {
     }
     return data.authorize_url;
   } catch (err) {
-    // Backend unavailable — build URL directly as fallback
-    console.warn('[auth] Backend /api/auth/github/authorize unavailable, using direct OAuth URL:', err);
-    return buildGitHubAuthorizeUrl();
+    // Only fall back for genuine network errors (TypeError) or HTTP 5xx/503/504/404
+    const isNetworkError = err instanceof TypeError;
+    const isServerError = err instanceof ApiError && (
+      err.status === 404 ||
+      err.status === 503 ||
+      err.status === 504 ||
+      err.status >= 500
+    );
+    if (isNetworkError || isServerError) {
+      console.warn('[auth] Backend /api/auth/github/authorize unavailable, using direct OAuth URL:', err);
+      return buildGitHubAuthorizeUrl();
+    }
+    // For other errors (e.g., invalid response body), rethrow
+    throw err;
   }
 }
 
@@ -82,13 +98,24 @@ export async function refreshTokens(refreshToken: string): Promise<AuthTokens> {
 }
 
 /**
+ * Clear all authentication data from localStorage and memory.
+ */
+export function clearAuthStorage(): void {
+  localStorage.removeItem('sf_access_token');
+  localStorage.removeItem('sf_refresh_token');
+  localStorage.removeItem('sf_user');
+  setAuthToken(null);
+}
+
+/**
  * Revoke the current session (server-side logout).
  * Clears local tokens afterwards regardless of server response.
  */
 export async function logout(): Promise<void> {
   try {
     await apiClient<void>('/api/auth/logout', { method: 'POST' });
-  } catch {
-    // Best-effort — clear local tokens even if server logout fails
+    clearAuthStorage();
+  } finally {
+    clearAuthStorage();
   }
 }
