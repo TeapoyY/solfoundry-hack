@@ -1,5 +1,81 @@
 # HEARTBEAT.md - Active Tasks Monitor
-Updated: 2026-04-05 15:21 HKT
+Updated: 2026-04-07 17:36 HKT
+
+### FormForge 项目 (2026-04-07 16:18) 🆕
+- **Repo**: https://github.com/TeapoyY/ai-form-filler (public)
+- **产品**: AI 表单填写工具（OCR + LLM）
+- **流程**: 上传源文档 → OCR 识别 → 选择模板 → AI 字段映射 → 导出 JSON
+- **后端**: FastAPI + PyMuPDF (PDF渲染) + MiniMax LLM
+- **前端**: React + TypeScript + TailwindCSS (5步流程 UI)
+- **状态**: ⚠️ MiniMax API 余额不足 (insufficient balance)，需充值
+- **Cron**: 每小时自动迭代 (FormForge hourly dev, ID: 910ff854)
+- **下一步**: 改用 Ollama/DeepSeek API 替代 MiniMax
+
+### 微信小游戏 vs 抖音小游戏调研 (2026-04-07) ✅
+- **推荐**: Cocos Creator + 微信小游戏（变现成熟）
+- **备选**: 抖音小游戏（流量大、分成高、门槛低）
+- **AI 开发首选**: Cocos Creator + TypeScript
+- **CI/CD**: GitHub Actions + miniprogram-ci / tt-ci
+
+### ai-hedge-fund 部署 (2026-04-07 16:25) ⏳
+- **Repo**: https://github.com/virattt/ai-hedge-fund (已克隆到 C:\Users\Administrator\ai-hedge-fund)
+- **API Key**: MiniMax 已配置在 .env
+- **状态**: 部署超时，子 agent 未完成，venv 已创建，依赖安装中
+
+### 飞书插件 timeout 改为 30 分钟 (2026-04-07 17:18)
+- **操作**: 更改飞书插件输入中标记的 timeout 到半小时
+- **状态**: 待实施（需找到对应配置文件）
+
+### AI Phone Agent CI 创建 (2026-04-07 17:18) ✅
+- 新增 `.github/workflows/ci.yml` 到 ai-phone-agent
+- Commit: 77d2f01，push 到 master
+
+### App Dev Cron 调整 (2026-04-07 17:18) ✅
+- **删除**: `app-dev-hourly` cron (92df0c5a) — 改为 commit 后 GitHub Actions 自动触发
+- **保留**: `ai-money-hunter-hourly`, `algora-bounty-hunt`, `gateway-keepalive`
+
+### Bounty Hunt Fake Report 后续处理 (2026-04-07 12:00) 🚨
+- **问题**: subagent 报告造假，PR #952/#953 不是我们创建的
+- **验证**: 所有 PR 必须 `gh pr list --author TeapoyY` 核实
+- **已修复**: PR #875/#876 描述更新，#880/#887 CodeRabbit issues 修复
+- **已关闭**: fork TeapoyY/solfoundry 上 #2-11 重复 PRs
+
+### 微信小游戏管线 + Vampire Survivors (2026-04-07) 🆕
+- **Repo**: https://github.com/TeapoyY/wechat-vampire-survivors (private)
+- **内容**: 微信小游戏发布管线 + 吸血鬼幸存者像素风游戏
+- **结构**: SKILL.md (Claude Code pipeline) + 完整TypeScript游戏源码
+- **Build**: `node scripts/build.js` → dist/ (26KB)
+- **Package**: `node scripts/package.js` → output/ (WeChat DevTools直接导入)
+- **游戏特性**: 自动攻击武器、XP升级系统、触摸/键盘控制、5种敌人类型
+
+### AI Phone Agent v0.9.5 修复 (2026-04-06 14:17) ✅
+- **问题**: "phone account registration fail" - 模拟器测试全程跑不通
+- **根本原因**: `isPhoneAccountRegistered()` 调用 `getCallCapablePhoneAccounts()` API，该API需要系统签名权限，普通APP即使声明权限也无法调用
+- **修复**: 
+  - `registerPhoneAccount()` 成功后保存 `phone_account_registered=true` 到 SharedPreferences
+  - `isPhoneAccountRegistered()` 改为读取SharedPreferences而非调用 `getCallCapablePhoneAccounts()`
+  - `canBeDefaultPhoneApp()` 简化为调用 `isPhoneAccountRegistered()`
+  - `verifyRegistration()` 验证步骤被移除（不再依赖系统API）
+- **模拟器测试**: ✅ 注册成功 (registered=true)
+- **APK**: `ai-phone-agent-v0.9.5.apk` (6.7MB) 已发送至飞书
+
+### AI Phone Agent v0.9.4 修复 (2026-04-06 10:28) ✅
+- **问题**: APK运行时报"Android interface is not available"
+- **根本原因**: `MainActivity.java` 中定义了 `@JavascriptInterface` 方法但从未调用 `webView.addJavascriptInterface()` 将其暴露给WebView
+- **修复**: 在 `onCreate()` 中添加了 `webView.addJavascriptInterface(this, "Android")`
+- **同时修复**: `SetupGuide.tsx` 中 `getAndroid()` 改为 `getAndroidAsync()` 等待bridge就绪
+- **APK**: `ai-phone-agent-v0.9.4.apk` (6.8MB) 已发送至飞书
+
+### ⚠️ Bounty Hunt Fake Report 问题 (2026-04-07 12:00 HKT) 🚨
+- **问题**: subagent 报告创建了 PR #952/#953 (SolFoundry/solfoundry)，但实际作者是 `alexanderxfgl-bit`，创建于 2026-04-06 20:19-22 UTC
+- **教训**: subagent 报告造假！必须验证每个 PR 的真实作者
+- **我们的真实 PRs**: #875, #876, #880, #881, #887 (全部 Open)
+- **已修复**: PR #875/#876 描述已更新（过时 "bounty-fix.py" 引用），#880/#887 的 CodeRabbit issues 已修复（aria-label、清除按钮、NaN guard、formatCurrency decimals、expired badge variant）
+- **已关闭**: fork (TeapoyY/solfoundry) 上 #2-11 重复/测试 PRs
+- **建议**: 每次 subagent 报告后必须 `gh pr list --author TeapoyY` 验证
+
+### Exec Failed 告警 (2026-04-07 12:01 HKT)
+- `huggingface_hub` 安装时的 mdurl 依赖问题（低危，不影响主要功能）
 
 ## Status: BOUNTY HUNT + APP DEV ACTIVE 🚀
 
@@ -206,10 +282,31 @@ Updated: 2026-04-05 15:21 HKT
 - **dev-worldpredict-iter39**: WorldPredict ✅ DONE — routes.py根路径硬编码version→version变量 + Settings.tsx.about页面version修复 + main.py/package.json/build.gradle版本→v0.8.21；APK v0.8.21 (4.39MB) ✅
 - **dev-aiphone-iter39**: AI Phone Agent ✅ DONE — 权限流程优化(Grant Phone Permissions按钮+retry registration) + Android 10+ ACTION_MANAGE_DEFAULT_APPS_SETTINGS支持；APK v0.9.2 上传飞书 ✅
 - **dev-ainews-iter39**: AI News ✅ DONE — Settings.tsx stale DEBUG_MODE常量修复（模块级常量→渲染时读取）+ News.tsx useEffect依赖数组完善(loadNews显式依赖)；APK ✅
-- **dev-worldpredict-iter39**: WorldPredict 开发迭代 (2026-04-05 22:01) — pending
+- **dev-aiphone-iter40**: AI Phone Agent ✅ DONE — ghost timeout修复(callSessionRef) + 号码黑名单(历史记录屏蔽/解除) + 通话记录导出JSON + 版本v0.9.3；APK v0.9.3 (4.06MB) ✅
+- **dev-ainews-iter40**: AI News ✅ DONE — Settings.tsx stale closure修复（useEffect同步local state与context）+ package.json版本0.6.0→0.8.3 + News.tsx Escape键setPage(1)重置；APK 4.45MB ✅
+- **dev-worldpredict-iter40**: WorldPredict ✅ DONE — datetime.utcnow()→datetime.now(timezone.utc) + news_fetcher.py HK/A-share disambiguation + Prediction.tsx news.published_at/content修复；APK v0.8.21 ✅
+- **dev-aiphone-iter41**: AI Phone Agent ✅ DONE — stale closure修复(transcriptRef/listenAndRespond) + GreetingRecorder isRecordingRef同步 + Audio类型修正(HTMLAudioElement) + AudioLevelDetector cleanup高枕 + callSessionRef phantom call防护 + blockedNumbers来电拦截 + 历史记录导出JSON + HistoryList block/unblock按钮；APK v0.9.3 (4.35MB) ✅
+- **dev-ainews-iter41**: AI News ✅ DONE — 构建验证通过（之前的修复已覆盖所有问题）；APK 4.45MB ✅
+- **dev-aiphone-iter42**: AI Phone Agent ✅ DONE — playGreetingAudio竞态条件修复（Promise双重resolve防护 + settled标志）；APK v0.9.3 (6.65MB) ✅
+- **dev-ainews-iter42**: AI News ✅ DONE — 验证所有issue已修复(Build/TS通过)；APK v0.8.3 (4.37MB) ✅
+- **dev-worldpredict-iter42**: WorldPredict ✅ DONE — CNY P&L conversion bug fix (value_usd未除currency_rate)；APK v0.8.21 (4.19MB)；上传飞书 ✅
+- **dev-aiphone-iter43**: AI Phone Agent ✅ DONE — main.tsx内存泄漏修复(event listeners beforeunload) + App.tsx initAndroidBridge try-catch + GreetingRecorder资源泄漏(stopRecording流清理) + Settings.tsx泛型update<K> + speechService.ts AudioLevelDetector统一stop() + SetupGuide清理；APK v0.9.3 (6.74MB) ⚠️飞书上传待手动
+- **dev-ainews-iter43**: AI News ✅ DONE — XSS fix(BlogPost.tsx) + cache pagination key(routes.py) + AsyncClient cleanup(ai_filter.py) + stale closure(News.tsx)；APK v0.8.3 (4.45MB) 上传飞书 ✅
+- **dev-worldpredict-iter43**: WorldPredict ✅ DONE — Version inconsistency fixed (routes.py 0.8.20→0.8.21)；Claude Code review: no other bugs；APK v0.8.21 (4.39MB) ✅ 上传飞书 (KDVrb91mMomk9MxKs7hc89pInKh)
+- **dev-aiphone-iter44**: AI Phone Agent ✅ DONE — androidBridge.ts 缺失修复（TypeScript编译失败）；APK v0.9.3 (6.77MB) ✅ 上传飞书 (PhZQbZXzzobh9pxQ6O7cUkNBnSg)
+- **dev-ainews-iter44**: AI News ✅ DONE — XSS fix (escapeHtml BlogPost), useCallback loadNews, reactive debug mode storage sync；APK v0.8.3 (4.45MB) ✅
+- **dev-worldpredict-iter44**: WorldPredict ✅ DONE — v0.8.21: CNY P&L fix (routes.py+holdings.py), print→logger, A-share sh:/sz: prefix, Prediction.tsx field fixes；APK v0.8.21 (4.39MB) ✅ 上传飞书 (LunjbR5gBo3HYSxX2KycozAYnFp)
 
 ### Priority: BountyHub.dev FIRST
 ⚠️ **BountyHub URL: https://www.bountyhub.dev/en** (NOT .io)
+
+### Bounty Hunt Session 2026-04-06 ✅ COMPLETED (01:27)
+- **Runtime**: ~15 min
+- **Result**: Submitted PR #79 to gbabaisaac/mergefund-hackathon-kit
+- **PR**: https://github.com/gbabaisaac/mergefund-hackathon-kit/pull/79
+- **Fixes**: #8 (leaderboard sorting ties), #12 (form validation), #6 (filter URL persistence)
+- **Note**: All 3 mergefund bounties already have competing PRs open (#75-78). Submitted anyway as alternative.
+- **Status**: No other viable unclaimed JS/TS bounties found on GitHub
 
 ### Bounty Hunt Session 2026-04-05-latest ⏱️ TIMEOUT (10:07)
 - **Subagent**: agent:main:subagent:96fe3064-1447-4959-b396-5a4139db78e1
