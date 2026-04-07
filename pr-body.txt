@@ -1,0 +1,31 @@
+## Summary
+
+Implements three T1 frontend bounties:
+
+### Bounty T1: Bounty Countdown Timer Component (#826)
+- New `CountdownTimer` component in `components/bounty/CountdownTimer.tsx`
+- Live ticking countdown (updates every 30s, or 1s with `showSeconds` prop)
+- Urgency color states: normal (>24h, grey) -> warning (<24h, amber) -> urgent (<1h, red + pulse dot) -> expired (grey)
+- Integrated into `BountyCard` and `BountyDetail` sidebar replacing the static Clock + timeLeft() calls
+
+### Bounty T1: Search Bar on Bounties Page (#823)
+- Added debounced search input (300ms) to `BountyGrid`
+- Filters by title, description, skills, and category client-side
+- Clear (X) button, magnifier icon, placeholder text
+- Empty state shows "No results for X" message
+
+### Bounty T1: Mobile Responsive Polish (#824)
+- Hero terminal command capped with max-w to prevent overflow on 375px screens
+- Footer CA address uses max-w-full instead of w-full to avoid overflow
+- BountyDetail title scales to text-xl on mobile, text-2xl on md+
+
+## Files changed
+- `frontend/src/components/bounty/CountdownTimer.tsx` (new)
+- `frontend/src/components/bounty/BountyCard.tsx`
+- `frontend/src/components/bounty/BountyDetail.tsx`
+- `frontend/src/components/bounty/BountyGrid.tsx`
+- `frontend/src/components/home/HeroSection.tsx`
+- `frontend/src/components/layout/Footer.tsx`
+
+## Testing
+TypeScript compilation passes with no errors.
