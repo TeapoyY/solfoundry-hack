@@ -2,6 +2,21 @@
 
 ## 经验总结
 
+### Capacitor/Vite 白屏问题 ⚠️
+- **原因**: Vite 默认使用绝对路径 `/assets/...`，Capacitor 从文件系统加载时无效
+- **解决**: 在 `vite.config.ts` 中添加 `base: './'`
+- **验证**: 检查构建输出的 `index.html` 中资源路径是否为 `./assets/...` 而非 `/assets/...`
+
+### APK 签名
+- AI Phone Agent keystore: `C:\Users\Administrator\.openclaw\workspace\ai-phone-agent\ai-phone-agent-release.keystore`
+- Alias: aiphonagent, Storepass: android123, Keypass: android123
+- 签名命令: `jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore <keystore> -storepass <pass> <apk> <alias>`
+
+### 飞书云盘 API 限制
+- 文件夹权限设置 API `type=folder` 有诸多限制
+- 解决方案: 为每个文件单独设置 `link_share_entity: "anyone_readable"` 公开链接
+- APK 下载文件夹 token: `C6lffONgvlxfZRdtZdfcwZCHnQh`
+
 ### 任务错误处理原则 ⚠️
 - **遇到任务错误时，主动调查原因而不是只汇报错误**
 - 检查 cron job 历史、错误日志、进程状态
@@ -25,11 +40,42 @@
 ## AI News v2 计划
 - 位置: `ai-news/PLAN_v2.md`
 - 阶段: 博客生成 + Android 打包 + Google Play 发布
-- 子代理运行中: ainews-blog (博客功能), ainews-android (Capacitor APK)
 - Skills 已创建: ainews-development, blog-generator, google-play-publish
+
+## 2026-04-02 Session
+- AI News backend: v0.8.2-noauth, PID 24636, running with --reload on port 8002
+- WP backend: v0.8.16 on port 8011
+- FIXED: Device-based anonymous read tracking (was failing silently)
+  - Backend: MarkReadRequest now accepts device_id, creates anonymous users per device
+  - Frontend: markAsRead() now generates UUID and sends device_id
+  - APKs built: ai-news-release-v0.8.2.apk, ai-news-debug-dev.apk
+- Bug: 8012 ghost processes are Windows TCP TIME_WAIT (not real processes)
+- Pending: MINIMAX_API_KEY not set → WP uses fallback predictions with inflated confidence
+- Daily report: `ainews_wp_daily_report_2026-04-02.md`
 
 ## 待完成
 - [x] 注册 AI Trader 账户 (OpenClawBot2, ID: 357)
+
+## 开发任务规则 ⚠️
+**运行开发任务时，使用 Claude Code 进行开发！**
+- Skill: `coding-agent` (已安装，支持 Claude Code)
+- 命令: `claude --permission-mode bypassPermissions --print 'task'`
+- 不要手动编写代码，让 Claude Code 代劳
+
+## Bounty Hunt 规则 ⚠️
+**使用 Claude Code + GStack QA 开发！**
+1. 找 Bounty: BountyHub.dev / GitHub `💎 bounty` label
+2. 认领: `/attempt #ISSUE`
+3. 开发: `claude --permission-mode bypassPermissions --print "fix issue"`
+4. 测试: 使用 GStack QA skill (`~/.claude/skills/gstack/qa/SKILL.md`)
+5. 提交 PR
+6. 记录到 `.learnings/bounty-hunt.md`
+
+## 测试 Skills
+| Skill | 路径 | 说明 |
+|-------|------|------|
+| GStack QA | `~/.claude/skills/gstack/qa/` | 完整 QA 测试流程 |
+| coding-agent | OpenClaw skills | Claude Code 支持 |
 - [x] 运行模拟交易 (脚本: ai-trader-bot.ps1)
 - [x] 设置每小时汇报 (Cron job: trading-report, 每小时一次)
 - [x] 注册 Claw Colony 账户 (areyouokbot, Token: 359,400)
@@ -40,36 +86,41 @@
 - Token: y_OUNBLI8QMIGomVQOXjN__WNUn2tQatvXoiQL0v5yw
 - 初始资金: $100,000
 
-### Claw Colony 详情 (2026-03-30 13:23 更新)
+### Claw Colony 详情 (2026-04-01 04:12 更新)
 - Username: areyouokbot
 - User ID: 4891a186-c970-499e-bf3d-bf4d2d66ee8d
 - API Key: clawcolony-fe8a95a9105bb216dfcfec8e
-- Token 余额: **424,185,501 tokens** (rank #1, +9,950 since 13:18)
-- **世界已解冻**: at_risk=56/274 (20.4%), threshold=30% ✅
-- Balance变化: 423.9M (冻结) → 424.1M (解冻后持续增长)
-- Colony level: critical ⚠️ (overall=35, threshold 45)
-- KB articles: #8467 published (持续增长)
-- Earning rate: ~+44,650 tokens/5min cycle
-- API balance endpoint: `https://clawcolony.agi.bar/api/v1/token/balance`
-- earn_daemon_v8 PID: 12636 (运行中 since 13:05)
-- Governance KPI: 34 (最好指标，9个活跃用户)
-- Knowledge/Autonomy KPI: 1 (无法单方面修复，需要多智能体参与)
+- earn_daemon_v9 PID: 16428 → 已重启，新PID见keepalive
+- Colony level: critical ⚠️
+- Balance: 425,148,728 tokens (rank #1)
+- 世界运行正常 (tick 3310, not frozen)
 
-#### 运行中的进程 (11:45 GMT+8)
-- clawcolony_continuous_earn.js (PID 10784) - ✅ 运行中
-- earn_daemon (PID 29716) - ✅ 运行中
+#### 运行状态 (2026-04-01 04:18 GMT+8)
+- earn_daemon_v9: ✅ Running (tick 2910, state age ~1min, keepalive healthy)
+- State file: `C:\Users\Administrator\.openclaw\workspace\clawcolony_earn_daemon_v8.state`
+- Keepalive log: `clawcolony_earn_v9_keepalive.log`
 
-#### API 端点
+#### 致命问题：Earning 已完全停止 ⚠️⚠️⚠️
+- **KB Publishing**: API正常返回200，但balance delta = 0 (无token奖励)
+- **Ganglion Forging**: API正常返回200，但balance delta = 0 (无token奖励)
+- **Token History**: 所有操作都是 consume 10 tokens (life cost)，无任何earn记录
+- **烧钱速度**: ~10 tokens/分钟 = ~14,400/day = ~29天余额耗尽
+- **Reward Claims**: 所有历史collabs返回400 Bad Request (已过期)
+
+#### KPI状态 (evolution-score)
+- Overall: 33 (critical)
+- Knowledge: 1 (178/179 users inactive) ⚠️
+- Autonomy: 1 (178/179 inactive) ⚠️
+- Governance: 34 (26 events)
+- Collaboration: 5
+- Survival: 97
+
+#### 关键API
 - `https://clawcolony.agi.bar/api/v1` (新地址)
-- AI Trader API: `https://api.aitrader.io` (TLS错误，需检查代理)
-
-#### 关键发现
-- ❌ **世界冻结**: at_risk卡在83/274 (30.3%)，刚好超过30%阈值
-- ❌ **KB/Ganglia earning 已死**: 冻结期间无法earn
-- ✅ **Treasury回收**: 维持系统运转但不产生增长
-- ⚠️ **P648**: PR尚未merge，20K tokens待领
-- ⚠️ **earn_daemon_v7卡死**: apiPost缺少超时处理
-- ⚠️ **不要运行fastloop** - 零回报
+- Balance: GET /api/v1/token/balance?user_id=...
+- KB publish: POST /api/v1/library/publish {title,category,content}
+- Forge: POST /api/v1/ganglia/forge {name,type,description,implementation,validation}
+- Reward claim: POST /api/v1/token/reward/upgrade-pr-claim {task_id} (需要有效collab_id)
 
 #### 经验教训
 - DCA Bot是主要收入来源 ($4.4M cash)
@@ -94,6 +145,30 @@
 
 ## 问题
 - Gateway 频繁关闭问题 - 已配置 NO_PROXY 但仍有问题
+
+### AI Money Hunter 分析 (2026-04-03)
+- Web Search API 仍然不可用（BRAVE_API_KEY 未配置）
+- 更新了 ai_money_opportunities.md，增加新方向：
+  - AI 电话助理 (Voice Agent) ⭐⭐⭐⭐⭐ 首选
+  - 视频 AI 摘要 + 剪辑 ⭐⭐⭐⭐⭐
+  - AI Agent Agency Model ⭐⭐⭐⭐
+- 发现 workspace 已有 ai-phone-agent 目录，可复用
+- GStack office-hours skill 已读取，掌握 YC 六问诊断框架
+
+### AI Money Hunter 分析 (2026-04-03 第二轮)
+- Web Search API 仍然不可用（BRAVE_API_KEY 未配置）
+- 本次更新重点：
+  - Voice AI Agent（语音替身）升级为🥇首选方向
+  - Computer-Using Agent (CUA) 新增为🥇TOP2
+  - MCP开发者服务升级（生态爆发中）
+  - 核心EUREKA：AI赚钱 = 从"帮人做"到"替人做"的代际革命
+  - Voice AI = 最后一个未被颠覆的高价值行为（电话）
+  - MCP = 2026年的"网站"机会（平台转移红利）
+- 已更新 ai_money_opportunities.md（完整报告）
+
+### Bounty Hunt 规则 (2026-04-04 更新)
+- **不评论别人的工作** - 不留言、不讨论、只干活
+- 直接认领 Bounty → 直接实现 → 直接提交 PR
 
 ### Cron Job 错误调查
 - **stock-monitor**: cron job 配置为 agentTurn，timeout 太短(60s)，但脚本持续运行
@@ -211,6 +286,50 @@
 
 ## 重要提醒
 - **在必要时使用 self-improving-agent 的 skill** 来记录学习、错误和修正
+- **所有任务执行前**: 先读取 `.learnings/LEARNINGS.md` 和 `.learnings/ERRORS.md` 避免重复错误
+- **所有任务执行后**: 记录结果到 `.learnings/` 相应文件
+
+## 所有开发流程规则 ⚠️
+**所有开发任务必须使用 Claude Code 进行！**
+1. **开发**: `claude --permission-mode bypassPermissions --print "task"`
+2. **Review**: 用 Claude Code 检查代码问题
+3. **修复**: 如果有问题，用 Claude Code 修复
+4. **循环**: 直到 Review 没有问题
+5. **最终验证**: 确认构建成功
+
+**适用范围**:
+- Dev agents (ai-phone-agent, ai-news, worldpredict 等)
+- Bounty hunt 实现
+- 所有代码开发/修复任务
+
+**Claude Code CLI 已可用** - `claude --version` 返回 2.1.79
+- Claude Code = Developer（执行开发）
+- OpenClaw Subagent = Reviewer（审核、验证、循环直到没问题）
+- Dev agent timeout: 1小时
+
+## Self-Improving Agent Skill ⚠️
+
+**位置**: `C:\Users\Administrator\.openclaw\workspace\skills\self-improving-agent`
+
+**Learnings目录**: `C:\Users\Administrator\.openclaw\workspace\.learnings\`
+- `LEARNINGS.md` - 纠正、最佳实践、知识差距
+- `ERRORS.md` - 命令失败、集成错误
+- `FEATURE_REQUESTS.md` - 用户请求的功能
+
+**使用规则**:
+| 情况 | 行动 |
+|------|------|
+| 命令/操作失败 | 记录到 `.learnings/ERRORS.md` |
+| 用户纠正你 | 记录到 `.learnings/LEARNINGS.md` (category: correction) |
+| 用户请求缺失功能 | 记录到 `.learnings/FEATURE_REQUESTS.md` |
+| 发现更好的方法 | 记录到 `.learnings/LEARNINGS.md` (category: best_practice) |
+| 知识过时/错误 | 记录到 `.learnings/LEARNINGS.md` (category: knowledge_gap) |
+
+**推广规则**:
+- 行为模式 → `SOUL.md`
+- 工作流改进 → `AGENTS.md`
+- 工具技巧 → `TOOLS.md`
+- 广泛适用学习 → 提升到上述文件
 
 ## 发现的新工具/项目
 
@@ -247,12 +366,20 @@
 - Reward: 20,000 tokens
 - Status: Open, claimable via /api/v1/token/reward/upgrade-pr-claim
 
-### CLAWCOLONY STATUS UPDATE 2026-03-30 11:51 GMT+8
-- Balance: 424,096,431 tokens (rank #1, +14,900/tick)
-- World: overall=35 (critical), knowledge=1, autonomy=2, governance=24, collaboration=5, survival=98
-- Daemons: earn_daemon_v8 ✅ tick 920+, continuous_loop ✅ cycle 3404, ops_monitor ✅ RESTARTED
-- AI Trader: DCA BTC $67,201, ETH $2,038, SOL $82.72 | Cycle 5146 running
-- Critical: Knowledge KPI stuck at 1 (only 1/179 users active) - KB edits running but no multi-agent participation
+### CLAWCOLONY STATUS UPDATE 2026-04-01 04:18 GMT+8
+- Balance: 425,148,728 tokens (rank #1) — ⚠️ EARNING STOPPED, declining ~10/min
+- World: tick 3310, overall=33 (critical), knowledge=1, autonomy=1, gov=34, collab=5, survival=97
+- Daemon: earn_daemon_v9 ✅ tick 2910, state healthy (1 min old)
+- World: NOT frozen (at_risk 55/274 = 20%, below 30% threshold) ✅
+- AI Trader: (check separate status)
+
+## CRITICAL: Claw Colony Earning Broken (2026-04-01)
+- KB Publishing and Ganglion Forging NO LONGER GENERATE TOKENS
+- Balance declining ~10 tokens/minute from life costs
+- At this rate: ~29 days until balance exhausted
+- Reward claims for old collabs return 400 Bad Request
+- No new earning mechanism found
+- ACTION: Keep daemon running for rank #1, await server-side fix
 
 ## App Dev 更新 (2026-03-31 02:15 GMT+8)
 
@@ -291,3 +418,39 @@
   3. 配置 GitHub Secrets (ANDROID_KEYSTORE, 密码等)
   4. 上传 release APK 进行测试发布
 - WorldPredict APK 版本: v0.8.15 (commit b513cfc)
+
+## FormForge (AI Form Filler)
+- **仓库**: https://github.com/TeapoyY/ai-form-filler (私有)
+- **产品**: AI 驱动表单填写工具 - 上传文档/图片，定义模板，AI 自动提取并填写
+- **后端**: `backend/main.py` (FastAPI, port 8002)
+- **前端**: `frontend/` (React + Vite)
+- **测试文件**: `backend/test_samples/en10204_certificate.pdf` + `.png`
+
+### 技术栈
+- **OCR**: PyMuPDF (text PDFs) + PaddleOCR 3.4.0 (images)
+- **Vision LLM**: Ollama minicpm-v (~4GB, via `/api/vision/file`)
+- **Text LLM**: Ollama gemma3:1b (via `/api/extract`)
+- **Backend**: FastAPI + uvicorn reload
+- **端口**: 8002 (手动启动时 `python backend/main.py`)
+
+### E2E 测试结果 (EN 10204 钢材证书) ✅
+1. OCR PDF (PyMuPDF): 1061 chars, 33 blocks ✅
+2. OCR PNG (PaddleOCR): 996 chars, 32 blocks ✅
+3. Extract (OCR→gemma3:1b): 12/12 fields, 0.99 conf ✅
+4. Vision PNG (minicpm-v): 12/12 fields, 1.0 conf ✅
+5. Vision PDF (minicpm-v): 12/12 fields ✅
+
+### 关键修复 (2026-04-08)
+- FastAPI `template_id: str = Form("")` — 修复 Form 数据读取
+- `_map_results` — 同时支持 `{"key":"..."}` 和 `{"field_key":"..."}` 格式
+- minicpm-v JSON 解析 — 处理 `{{...}}` 双括号、JS注释、未加引号值
+- PaddleOCR reader 缓存 — 避免每次调用重新加载模型 (~90s → ~20s)
+- `.gitignore` — 添加 `*.log` 和 `server*.log` 排除服务器运行日志
+
+### DeepSeek 支持
+- `extractor.py` 包含 `_call_deepseek()` — 设置 `DEEPSEEK_API_KEY` 环境变量并切换 `LLM_PROVIDER=deepseek` 即可激活
+- 当前使用 Ollama (gemma3:1b + minicpm-v) — DeepSeek API key 未配置
+
+### 服务状态
+- Backend: http://localhost:8002 (v0.3.0, reload=True, PID ~2696)
+- Frontend dev: `cd frontend && npm run dev`
