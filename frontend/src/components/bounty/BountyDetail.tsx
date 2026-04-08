@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Clock, GitPullRequest, ExternalLink, Loader2, Check, Copy } from 'lucide-react';
+import { ArrowLeft, GitPullRequest, ExternalLink, Loader2, Check, Copy } from 'lucide-react';
 import type { Bounty } from '../../types/bounty';
-import { timeLeft, timeAgo, formatCurrency, LANG_COLORS } from '../../lib/utils';
+import { timeAgo, formatCurrency, LANG_COLORS } from '../../lib/utils';
 import { useAuth } from '../../hooks/useAuth';
 import { SubmissionForm } from './SubmissionForm';
+import { BountyCountdown, BountyCountdownFull } from './BountyCountdown';
 import { fadeIn } from '../../lib/animations';
 
 interface BountyDetailProps {
@@ -121,6 +122,12 @@ export function BountyDetail({ bounty }: BountyDetailProps) {
             <p className="font-mono text-3xl font-bold text-emerald">
               {formatCurrency(bounty.reward_amount, bounty.reward_token)}
             </p>
+            {bounty.deadline && (
+              <div className="mt-3 pt-3 border-t border-emerald/20">
+                <p className="text-xs text-text-muted font-mono mb-1">Time Remaining</p>
+                <BountyCountdownFull deadline={bounty.deadline} />
+              </div>
+            )}
           </div>
 
           {/* Info card */}
@@ -138,9 +145,7 @@ export function BountyDetail({ bounty }: BountyDetailProps) {
             {bounty.deadline && (
               <div className="flex items-center justify-between text-sm">
                 <span className="text-text-muted">Deadline</span>
-                <span className="font-mono text-status-warning inline-flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" /> {timeLeft(bounty.deadline)}
-                </span>
+                <BountyCountdown deadline={bounty.deadline} />
               </div>
             )}
             <div className="flex items-center justify-between text-sm">
