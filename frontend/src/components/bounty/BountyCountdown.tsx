@@ -112,15 +112,15 @@ export function BountyCountdown({ deadline, showSeconds = false, compact = false
 
   const segments = compact
     ? days > 0
-      ? `${days}d ${hours}h`
+      ? `${days}d ${pad(hours)}h ${pad(minutes)}m`
       : hours > 0
-        ? `${hours}h ${minutes}m`
-        : `${minutes}m`
+        ? `${pad(hours)}h ${pad(minutes)}m`
+        : `${pad(minutes)}m`
     : days > 0
       ? `${days}d ${pad(hours)}h ${pad(minutes)}m`
       : hours > 0
         ? `${pad(hours)}:${pad(minutes)}${showSeconds ? `:${pad(seconds)}` : ''}`
-        : `${minutes}:${pad(seconds)}`;
+        : `${pad(minutes)}:${pad(seconds)}`;
 
   const dotClass = style.pulse ? 'animate-pulse-glow' : '';
 
