@@ -7,6 +7,7 @@ import { useBounties } from '../../hooks/useBounties';
 import { timeAgo, formatCurrency } from '../../lib/utils';
 import { fadeIn, staggerContainer, staggerItem } from '../../lib/animations';
 import type { Bounty } from '../../types/bounty';
+import { SkeletonProfileHeader, SkeletonBountyListItem, SkeletonEarningsStats } from '../skeleton/SkeletonProfileHeader';
 
 const TABS = ['My Bounties', 'My Submissions', 'Earnings', 'Settings'] as const;
 type Tab = typeof TABS[number];
@@ -35,7 +36,15 @@ function BountyStatusBadge({ status }: { status: string }) {
 
 function MyBountiesTab({ bounties, loading }: { bounties: Bounty[]; loading: boolean }) {
   if (loading) {
-    return <div className="text-text-muted text-sm py-8 text-center">Loading...</div>;
+    return (
+      <motion.div variants={staggerContainer} initial="initial" animate="animate" className="space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <motion.div key={i} variants={staggerItem}>
+            <SkeletonBountyListItem />
+          </motion.div>
+        ))}
+      </motion.div>
+    );
   }
   if (!bounties.length) {
     return (
