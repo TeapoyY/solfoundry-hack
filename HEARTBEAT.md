@@ -1,70 +1,88 @@
 # HEARTBEAT.md - Active Tasks Monitor
-Updated: 2026-04-08 18:14 HKT
+Updated: 2026-04-09 18:45 HKT
 
 ## Active Projects
 
 ### FormForge (AI Form Filler)
 - **Repo**: https://github.com/TeapoyY/ai-form-filler
-- **Stack**: FastAPI + PyMuPDF + PaddleOCR + Ollama (gemma3:1b + minicpm-v)
+- **Stack**: FastAPI + PyMuPDF + Ollama (gemma3:1b + minicpm-v)
 - **Status**: ✅ Active dev (v0.3.0)
-- **Cron**: FormForge hourly dev (ID: 910ff854)
-- **Issue**: MiniMax API insufficient balance — using Ollama instead
-- **DeepSeek**: Set `DEEPSEEK_API_KEY` env var + `LLM_PROVIDER=deepseek` to activate
+- **Backend**: port 8001
 
-### AI Phone Agent
-- **Repo**: https://github.com/TeapoyY/ai-phone-agent
-- **Status**: ✅ Active (latest APK v0.8.9)
-- **Backend**: port 8013 | **Frontend**: port 3000
+### AI News / WorldPredict
+- **Repos**: ai-news, world-predict
+- **Status**: ✅ Running
+- **Ports**: 8002 (news), 8011 (wp), 3002/3004 (frontend)
 
-### AI News
-- **Repo**: https://github.com/TeapoyY/ai-news
-- **Status**: ✅ Active
-- **Backend**: port 8002 | **Frontend**: port 3002
+### Parallax Train Widget
+- **Repo**: https://github.com/TeapoyY/parallax-train-widget
+- **New**: Transparent/Desktop embed modes added (2026-04-09)
 
-### WorldPredict
-- **Repo**: https://github.com/TeapoyY/world-predict
-- **Status**: ✅ Active (v0.8.20)
-- **Backend**: port 8011 | **Frontend**: port 3004
+## Bounty Hunt ⚠️
+1. Find: BountyHub.dev / Algora.io
+2. **Verify real money**: `bounty` label ≠ cash!
+3. Claude Code: `claude --print "implement..."`
+4. PR verification: `gh pr list --author TeapoyY`
 
-### WeChat Vampire Survivors (微信小游戏)
-- **Repo**: https://github.com/TeapoyY/wechat-vampire-survivors (private)
-- **Status**: 🆕 Pipeline ready — Cocos Creator + TypeScript
-
-### ai-hedge-fund
-- **Repo**: https://github.com/virattt/ai-hedge-fund (cloned to C:\Users\Administrator\ai-hedge-fund)
-- **Status**: ⏳ Deployment pending — venv ready, deps installing
-
-## Bounty Hunt
-
-### Rules (⚠️ Read First)
-1. Find bounties: BountyHub.dev (PRIMARY) / Algora.io (secondary)
-2. **Verify real money**: `bounty` label ≠ cash! Must have `$XX` or tradeable token
-3. Use Claude Code: `claude --permission-mode bypassPermissions --print "implement..."`
-4. Verify PRs: always `gh pr list --author TeapoyY` — subagent can fabricate reports!
-5. No commenting on others' work — just claim → implement → PR
-
-### Current PRs (Real Bounties)
+### Active PRs
 | PR | Repo | Bounty | Status |
 |----|------|--------|--------|
-| #875 | SolFoundry/solfoundry | 200K FNDRY (OAuth fix) | ✅ OPEN |
-| #876 | SolFoundry/solfoundry | 900K FNDRY (TS SDK) | ✅ OPEN |
-| #880 | SolFoundry/solfoundry | 150K FNDRY (Search bar) | ✅ OPEN |
-| #881 | SolFoundry/solfoundry | 100K FNDRY (Countdown timer) | ✅ OPEN |
-| #887 | SolFoundry/solfoundry | Multi-bounty combo | ✅ OPEN |
+| #875-887 | SolFoundry/solfoundry | 200K-900K FNDRY | ✅ OPEN |
 | #2734 | react-native-gifted-chat | $15 | ✅ OPEN |
-
-### FNDRY Status
-- FNDRY = SolFoundry platform token (not USD)
-- Value unverified — check if listed on exchanges
 
 ## Cron Jobs
 | Job | Schedule | Status |
 |-----|----------|--------|
 | gateway-keepalive | every 10m | ✅ |
 | bounty-hunt-monitor | every 1h | ✅ |
-| ai-money-hunter-hourly | every 1h | ✅ |
+| ai-money-hunter | every 1h | ✅ |
 
-Note: "error" status = notification delivery failed (Axios 400), not job failure.
+---
+
+## Self-Improvement Loop (Hermes-style) ⚡ NEW
+
+### 组件 (4 Skills)
+| Skill | 功能 | 触发 |
+|-------|------|------|
+| auto-skill-creator | 从复杂任务创建 Skill | tool_calls >= 5 |
+| memory-guardian | 有界记忆 + 自动精简 | >80% 时精简 |
+| session-archivist | 会话归档 + 搜索 | 每 30 分钟 |
+| nudge-memory | 周期性保存提醒 | 每小时 HEARTBEAT |
+
+### HEARTBEAT 检查清单 (按顺序)
+
+**每 30 分钟:**
+- [ ] 检查是否需要归档当前会话 (session-archivist)
+- [ ] 检查是否需要创建新 Skill (auto-skill-creator)
+
+**每小时:**
+- [ ] MEMORY.md 使用率检查 (memory-guardian)
+  - 如果 >70%: 提示 consolidation
+  - 如果 >80%: 执行 consolidation
+- [ ] 重要知识保存提醒 (nudge-memory)
+- [ ] USER.md 使用率检查
+
+**每天 (首次 HEARTBEAT):**
+- [ ] 回顾昨天关键进展
+- [ ] 清理过时 MEMORY 条目
+- [ ] 检查 session archives 搜索能力
+
+### 保存规则
+| 内容 | 位置 |
+|------|------|
+| 工具技巧 | TOOLS.md |
+| 行为模式 | SOUL.md |
+| 工作流改进 | AGENTS.md |
+| 普遍教训 | .learnings/LEARNINGS.md |
+| 命令错误 | .learnings/ERRORS.md |
+| 用户请求 | .learnings/FEATURE_REQUESTS.md |
+
+### 容量限制
+- MEMORY.md: **4,000 chars** (80% of 5,000)
+- USER.md: **2,400 chars** (80% of 3,000)
+- 超出 → 自动 consolidation
+
+---
 
 ## Service Ports
 - AI News backend: 8002
