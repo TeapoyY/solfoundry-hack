@@ -1,0 +1,69 @@
+{
+  "name": "Parallax Train Widget - Assets Manifest",
+  "version": "1.0.0",
+  "description": "List of all editable assets in the parallax train widget",
+  "assets": {
+    "backgrounds": {
+      "description": "Background images and gradients for the parallax scene",
+      "path": "src/assets/backgrounds/",
+      "examples": [
+        "night-sky.png",
+        "mountains.png",
+        "city.png",
+        "water.png"
+      ]
+    },
+    "sprites": {
+      "description": "Train and animated sprite images",
+      "path": "src/assets/sprites/",
+      "examples": [
+        "train-default.png",
+        "train-cargo.png",
+        "boat.png"
+      ]
+    },
+    "icons": {
+      "description": "UI icons and emoji assets",
+      "path": "src/assets/icons/"
+    },
+    "fonts": {
+      "description": "Custom fonts",
+      "path": "src/assets/fonts/"
+    }
+  },
+  "layerConfig": {
+    "description": "Main configuration file for parallax layers",
+    "path": "src/config/config.json",
+    "editableViaUI": true,
+    "properties": [
+      "layers[].name",
+      "layers[].type",
+      "layers[].imageUrl",
+      "layers[].speed",
+      "layers[].opacity",
+      "layers[].position",
+      "layers[].scale"
+    ]
+  },
+  "customization": {
+    "description": "All visual elements can be customized through the built-in Layer Editor",
+    "access": "Click 'Edit' button in the widget header to open Layer Editor",
+    "features": [
+      "Add/remove/reorder layers",
+      "Change layer images via file picker or drag-drop",
+      "Adjust speed, opacity, scale, position",
+      "Preview changes in real-time",
+      "Reset to defaults"
+    ]
+  },
+  "buildAssets": {
+    "description": "Build-time assets (icons, splash screens)",
+    "path": "build/",
+    "required": [
+      "icon.ico"
+    ],
+    "optional": [
+      "splash.png"
+    ]
+  }
+}

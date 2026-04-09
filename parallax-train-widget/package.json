@@ -1,0 +1,67 @@
+{
+  "name": "parallax-train-widget",
+  "version": "1.0.0",
+  "description": "A desktop widget with parallax train on water, Pomodoro timer, and Todo list",
+  "main": "main.js",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "dev:transparent": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron . --transparent\"",
+    "dev:desktop": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron . --desktop\"",
+    "build": "vite build",
+    "build:portable": "vite build && electron-builder --win portable",
+    "build:installer": "vite build && electron-builder --win nsis",
+    "build:editable": "vite build && electron-builder --win dir",
+    "preview": "vite preview"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^9.0.1",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8",
+    "vite": "^5.4.8",
+    "wait-on": "^8.0.1"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "build": {
+    "appId": "com.parallax.trainwidget",
+    "productName": "Parallax Train Widget",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*",
+      "!src/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "dir",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable.${ext}"
+    },
+    "asar": true
+  }
+}
