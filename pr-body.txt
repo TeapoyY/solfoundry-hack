@@ -1,0 +1,32 @@
+## Bounty T1: Bounty Countdown Timer Component
+
+Implements **Bounty #826** — Bounty Countdown Timer Component.
+
+### Changes
+
+**New component: `BountyCountdown.tsx`**
+- `BountyCountdown` — compact inline countdown with colored urgency dot
+- `BountyCountdownFull` — full HH:MM:SS display for detail page reward card
+- Real-time updates every second via `useEffect` + `setInterval`
+- Urgency color states:
+  - **> 24 hours**: green (normal)
+  - **< 24 hours**: amber warning
+  - **< 1 hour**: red + pulsing glow dot (urgent)
+  - **expired**: muted gray
+
+**Updated `BountyCard.tsx`**
+- Replaced static `timeLeft()` + `Clock` icon with live `BountyCountdown compact` variant
+
+**Updated `BountyDetail.tsx`**
+- Sidebar deadline row now uses `BountyCountdown` (inline)
+- Reward card gains a new "Time Remaining" section with `BountyCountdownFull` (HH:MM:SS)
+- Full countdown visible prominently on the bounty detail page
+
+### Acceptance Criteria
+- [x] Timer displays on bounty cards (compact inline)
+- [x] Timer displays on bounty detail page (sidebar + reward card)
+- [x] Updates without page refresh (real-time, every second)
+- [x] Visual urgency indicators (green -> amber -> red -> muted)
+- [x] Shows "Expired" when deadline passes
+
+Closes #826
