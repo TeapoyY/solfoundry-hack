@@ -18,6 +18,11 @@ const NAV_LINKS = [
   { label: 'How It Works', to: '/how-it-works' },
 ];
 
+/**
+ * Navbar — the top navigation bar, fixed above content.
+ * Shows logo, nav links, live bounty count badge, and auth controls
+ * (GitHub sign-in button or user avatar dropdown).
+ */
 export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();

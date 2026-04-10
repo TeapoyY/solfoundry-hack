@@ -1,11 +1,19 @@
 import type { Variants } from 'framer-motion';
 
+/**
+ * Page-level transition variants for framer-motion.
+ * Fades and slides content in/out when navigating between routes.
+ */
 export const pageTransition: Variants = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
   exit: { opacity: 0, y: -8, transition: { duration: 0.2, ease: 'easeIn' } },
 };
 
+/**
+ * Stagger container variants — apply to a parent motion.div to stagger
+ * the animate transitions of its children.
+ */
 export const staggerContainer: Variants = {
   initial: {},
   animate: {
@@ -13,6 +21,10 @@ export const staggerContainer: Variants = {
   },
 };
 
+/**
+ * Single item variant for use within a staggerContainer.
+ * Children of the container should use this as their `variants` prop.
+ */
 export const staggerItem: Variants = {
   initial: { opacity: 0, y: 12 },
   animate: {
@@ -22,6 +34,10 @@ export const staggerItem: Variants = {
   },
 };
 
+/**
+ * Card hover effect — scale + glow shadow on hover, rest state otherwise.
+ * Apply to a motion.div wrapping a card element.
+ */
 export const cardHover: Variants = {
   rest: { scale: 1, boxShadow: '0 0 0 0 transparent' },
   hover: {
@@ -31,6 +47,10 @@ export const cardHover: Variants = {
   },
 };
 
+/**
+ * Simple fade-in with subtle upward slide.
+ * Suitable for onboarding screens, modals, or inline content reveals.
+ */
 export const fadeIn: Variants = {
   initial: { opacity: 0, y: 10 },
   animate: {
@@ -40,6 +60,10 @@ export const fadeIn: Variants = {
   },
 };
 
+/**
+ * Slide-in from the right animation.
+ * Use for notifications, drawers, or content entering from the side.
+ */
 export const slideInRight: Variants = {
   initial: { opacity: 0, x: 30 },
   animate: {
@@ -49,6 +73,10 @@ export const slideInRight: Variants = {
   },
 };
 
+/**
+ * Button hover/tap micro-interaction — subtle scale up on hover,
+ * scale down on tap. Apply to a motion.button element.
+ */
 export const buttonHover: Variants = {
   rest: { scale: 1 },
   hover: { scale: 1.04, transition: { duration: 0.15, ease: 'easeOut' } },

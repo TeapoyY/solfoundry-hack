@@ -37,6 +37,13 @@ const TOKEN_KEY = 'sf_access_token';
 const REFRESH_KEY = 'sf_refresh_token';
 const USER_KEY = 'sf_user';
 
+/**
+ * AuthContext provider — manages JWT token + current user state, persisted to localStorage.
+ * Provides login (token storage), logout, and the authenticated user object.
+ * Wire this into the app root to make auth state available via `useAuthContext`.
+ *
+ * @param children - The React subtree that will have access to the auth context
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -103,6 +110,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Hook to access the auth context value.
+ * Throws if called outside of an `AuthProvider` tree.
+ */
 export function useAuthContext(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuthContext must be used inside AuthProvider');

@@ -6,8 +6,14 @@ import { BountyCard } from './BountyCard';
 import { useInfiniteBounties } from '../../hooks/useBounties';
 import { staggerContainer, staggerItem } from '../../lib/animations';
 
+/** Skill filter options available in the bounty grid filter bar. */
 const FILTER_SKILLS = ['All', 'TypeScript', 'Rust', 'Solidity', 'Python', 'Go', 'JavaScript'];
 
+/**
+ * BountyGrid — renders the full bounty listing page section.
+ * Includes a skill/language filter bar, status dropdown, search input,
+ * client-side debounced search, and a paginated card grid with infinite scroll.
+ */
 export function BountyGrid() {
   const [activeSkill, setActiveSkill] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('open');

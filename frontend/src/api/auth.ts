@@ -79,6 +79,13 @@ export async function getGitHubAuthorizeUrl(): Promise<string> {
   }
 }
 
+/**
+ * Exchange a GitHub OAuth authorization code for JWT auth tokens and user info.
+ * Called by the GitHub callback page after the user approves the OAuth request.
+ *
+ * @param code  - The authorization code returned by GitHub in the callback URL
+ * @param state - The CSRF state token returned by GitHub (optional, validated server-side)
+ */
 export async function exchangeGitHubCode(code: string, state?: string): Promise<GitHubCallbackResponse> {
   return apiClient<GitHubCallbackResponse>('/api/auth/github', {
     method: 'POST',
@@ -86,10 +93,20 @@ export async function exchangeGitHubCode(code: string, state?: string): Promise<
   });
 }
 
+/**
+ * Fetch the currently authenticated user's profile from the backend.
+ * Requires a valid access token in the Authorization header.
+ */
 export async function getMe(): Promise<User> {
   return apiClient<User>('/api/auth/me');
 }
 
+/**
+ * Refresh the access token using a valid refresh token.
+ * Returns a new set of access + refresh tokens on success.
+ *
+ * @param refreshToken - The refresh token previously issued during login
+ */
 export async function refreshTokens(refreshToken: string): Promise<AuthTokens> {
   return apiClient<AuthTokens>('/api/auth/refresh', {
     method: 'POST',

@@ -1,3 +1,7 @@
+/**
+ * Mapping of programming language names to their canonical brand colors.
+ * Used for skill/tag badges throughout the UI.
+ */
 export const LANG_COLORS: Record<string, string> = {
   TypeScript: '#3178C6',
   JavaScript: '#F7DF1E',
@@ -21,6 +25,14 @@ export const LANG_COLORS: Record<string, string> = {
   Zig: '#EC915C',
 };
 
+/**
+ * Format a numeric token amount into a human-readable currency string.
+ * USDC amounts are prefixed with "$" and show "USDC" explicitly;
+ * other tokens display the raw amount followed by the token symbol.
+ *
+ * @param amount - The numeric amount of the token
+ * @param token  - The token symbol (e.g. "USDC", "SOL")
+ */
 export function formatCurrency(amount: number, token: string): string {
   if (token === 'USDC') {
     return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USDC`;
@@ -28,6 +40,12 @@ export function formatCurrency(amount: number, token: string): string {
   return `${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ${token}`;
 }
 
+/**
+ * Returns a human-readable string describing the time remaining until a deadline.
+ * Returns "Expired" if the deadline has already passed.
+ *
+ * @param deadline - ISO-8601 date string or any parseable date string
+ */
 export function timeLeft(deadline: string): string {
   const now = Date.now();
   const deadlineMs = new Date(deadline).getTime();
@@ -44,6 +62,12 @@ export function timeLeft(deadline: string): string {
   return `${minutes}m`;
 }
 
+/**
+ * Returns a human-readable "time ago" string for a past date.
+ * e.g. "2d ago", "5h ago", "just now".
+ *
+ * @param dateStr - ISO-8601 date string or any parseable date string
+ */
 export function timeAgo(dateStr: string): string {
   const now = Date.now();
   const dateMs = new Date(dateStr).getTime();

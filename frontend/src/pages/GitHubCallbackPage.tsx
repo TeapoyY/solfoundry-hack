@@ -6,6 +6,11 @@ import { exchangeGitHubCode } from '../api/auth';
 import { setAuthToken } from '../services/apiClient';
 import { fadeIn } from '../lib/animations';
 
+/**
+ * GitHubCallbackPage — handles the OAuth callback from GitHub.
+ * Exchanges the authorization code for JWT tokens, validates CSRF state,
+ * stores the session, and redirects to the home page.
+ */
 export function GitHubCallbackPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
