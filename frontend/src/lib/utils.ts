@@ -21,7 +21,7 @@ export const LANG_COLORS: Record<string, string> = {
   Python: '#3572A5',
   Go: '#00ADD8',
   Java: '#b07219',
-  C++: '#f34b7d',
+  'C++': '#f34b7d',
   C: '#555555',
   Ruby: '#701516',
   Swift: '#F05138',

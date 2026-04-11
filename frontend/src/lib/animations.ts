@@ -53,3 +53,12 @@ export const buttonHover: Variants = {
   hover: { scale: 1.03 },
   tap: { scale: 0.97 },
 };
+
+export const slideInRight: Variants = {
+  initial: { opacity: 0, x: 20 },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.25, ease: 'easeOut' },
+  },
+};
