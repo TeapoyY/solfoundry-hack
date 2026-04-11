@@ -64,6 +64,7 @@ export function Navbar() {
       window.location.href = url;
     } catch (err) {
       console.error('[Navbar] GitHub sign-in failed:', err);
+      window.alert('Sign-in failed. Please try again or contact support.');
     }
   };
 
