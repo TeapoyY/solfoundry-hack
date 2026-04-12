@@ -5,6 +5,7 @@ import { Check, ChevronRight, Loader2, Copy } from 'lucide-react';
 import type { BountyCreatePayload } from '../../types/bounty';
 import { createBounty, getTreasuryDepositInfo, verifyEscrowDeposit } from '../../api/bounties';
 import { pageTransition } from '../../lib/animations';
+import { useToast } from '../../hooks/useToast';
 
 const PRESET_AMOUNTS = [10, 20, 50, 100, 200];
 const PLATFORM_FEE_PCT = 0.05;
@@ -380,6 +381,7 @@ function Step3({
 
 export function BountyCreateWizard() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [step, setStep] = useState(0);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -423,7 +425,9 @@ export function BountyCreateWizard() {
       onChange('total_to_fund', depositInfo.total_to_fund);
       setStep(2);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to create bounty. Try again.');
+      const msg = e instanceof Error ? e.message : 'Failed to create bounty. Try again.';
+      setError(msg);
+      toast.error('Bounty creation failed', msg);
     } finally {
       setCreating(false);
     }
@@ -436,8 +440,11 @@ export function BountyCreateWizard() {
     try {
       await verifyEscrowDeposit({ bounty_id: state.bounty_id, tx_signature: state.tx_signature });
       setSuccess(true);
+      toast.success('Bounty published!', 'Your bounty is live and contributors can now find it.');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to publish bounty. Try again.');
+      const msg = e instanceof Error ? e.message : 'Failed to publish bounty. Try again.';
+      setError(msg);
+      toast.error('Publish failed', msg);
     } finally {
       setCreating(false);
     }
