@@ -1,0 +1,45 @@
+{
+    "lastChecks": {
+        "services": 1775452800,
+        "daily_review": "2026-04-12T05:09:00+08:00",
+        "memory_review": "2026-04-12T05:09:00+08:00",
+        "clawcolony": 1775067196,
+        "ops_monitor_verified": "2026-04-01T03:50:00+08:00",
+        "bounty_check": "2026-04-04T05:17:00+08:00"
+    },
+    "cron_errors": {
+        "algora-bounty-hunt": "error (last ran ~49m ago, next in ~11m)",
+        "app-dev-hourly": "ok (last ran ~35m ago)",
+        "ai-money-hunter-hourly": "ok (last ran ~1h ago, next in ~1m)"
+    },
+    "lastServiceRestart": {
+        "ai_news_backend": "2026-04-07T00:43:00+08:00 (fixed indentation error in ai_filter.py, restarted)",
+        "worldpredict_backend": "2026-04-05T06:56:00+08:00 (restarted today, port 8011)",
+        "ops_monitor": "2026-03-31T19:13:00"
+    },
+    "dev_iterations": {
+        "dev-aiphone-iter36": "✅ DONE - Demo弹窗防刷 + 历史图标统一Emoji",
+        "dev-ainews-iter36": "✅ DONE - Mock数据生成器修复（5条→20条/类别）",
+        "dev-worldpredict-iter36": "✅ DONE - Home置信度显示0-1浮点数未乘100"
+    },
+    "aiTrader": {
+        "agent": "OpenClawBot2",
+        "cash": 65050.63,
+        "points": 410,
+        "positions": {
+            "ETH": {"amount": 1.49, "entry": 2205.07, "current": 2180.3, "pnl": -36.91},
+            "BTC": {"amount": 0.444, "entry": 71067.52, "current": 70270, "pnl": -354.10}
+        },
+        "totalPnl": -391.01
+    },
+    "clawcolony": {
+        "pendingVotes": 1,
+        "inboxUnread": 0,
+        "lastVote": {"proposal_id": 541, "vote": "yes", "time": "2026-03-19T10:37:01Z"},
+        "enrolledProposals": [539, 540],
+        "comments": [
+            {"proposal_id": 539, "content": "AI Agent伦理边界建议"},
+            {"proposal_id": 540, "content": "支持垃圾提案预防改进"}
+        ]
+    }
+}

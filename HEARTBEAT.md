@@ -1,5 +1,5 @@
 # HEARTBEAT.md - Active Tasks Monitor
-Updated: 2026-04-10 07:04 HKT
+Updated: 2026-04-12 13:09 HKT
 
 ## Active Projects
 
@@ -7,7 +7,9 @@ Updated: 2026-04-10 07:04 HKT
 - **Repo**: https://github.com/TeapoyY/ai-form-filler
 - **Stack**: FastAPI + PyMuPDF + Ollama (gemma3:1b + minicpm-v)
 - **Status**: ✅ Active dev (v0.3.0)
-- **Backend**: port 8002
+- **Backend**: port 8001
+- **OCR**: Primary=EasyOCR+gemma3 (化学元素✅), Experimental=minicpm-v (慢/截断)
+- **OCR注意**: DeepSeek-OCR-2 有幻觉问题，不推荐；中文文档推荐 PaddleOCR PP-OCRv4 或百度 OCR API
 
 ### AI News / WorldPredict
 - **Repos**: ai-news, world-predict
@@ -24,15 +26,13 @@ Updated: 2026-04-10 07:04 HKT
 3. Claude Code: `claude --print "implement..."`
 4. PR verification: `gh pr list --author TeapoyY`
 
-### Active PRs (verified 2026-04-10 07:04 HKT)
+### Active PRs (verified 2026-04-10 16:39 HKT)
 | PR | Repo | Bounty | Status |
 |----|------|--------|--------|
 | #887 | SolFoundry/solfoundry | T1: countdown timer + search bar | ✅ OPEN |
-| #881 | SolFoundry/solfoundry | T1: Bounty Countdown Timer | ✅ OPEN |
-| #880 | SolFoundry/solfoundry | T1: Search Bar to Bounties | ✅ OPEN |
-| #876 | SolFoundry/solfoundry | T3: TypeScript SDK | ✅ OPEN |
 | #875 | SolFoundry/solfoundry | T1: Fix GitHub OAuth Sign-In | ✅ OPEN |
-| #2734 | react-native-gifted-chat | $15 | ❌ CLOSED (未找到) |
+| #881, #880, #876 | SolFoundry/solfoundry | — | ❌ CLOSED |
+| #2734 | react-native-gifted-chat | $15 | ❌ CLOSED |
 
 ## Cron Jobs
 | Job | Schedule | Status |
