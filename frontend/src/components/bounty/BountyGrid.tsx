@@ -3,10 +3,9 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronDown, Loader2, Plus, Search, X } from 'lucide-react';
 import { BountyCard } from './BountyCard';
+import { AdvancedFilters, loadSavedFilters, saveFiltersToStorage, type FilterState } from './AdvancedFilters';
 import { useInfiniteBounties } from '../../hooks/useBounties';
 import { staggerContainer, staggerItem } from '../../lib/animations';
-
-const FILTER_SKILLS = ['All', 'TypeScript', 'Rust', 'Solidity', 'Python', 'Go', 'JavaScript'];
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -18,14 +17,23 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function BountyGrid() {
-  const [activeSkill, setActiveSkill] = useState<string>('All');
+  const [advancedFilters, setAdvancedFilters] = useState<FilterState>(() => loadSavedFilters());
   const [statusFilter, setStatusFilter] = useState<string>('open');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Persist advanced filters to localStorage on change
+  useEffect(() => {
+    saveFiltersToStorage(advancedFilters);
+  }, [advancedFilters]);
+
+  // Derive single skill from advancedFilters.skills for API call
+  const apiSkill = advancedFilters.skills.length === 1 ? advancedFilters.skills[0] : undefined;
 
   const params = {
     status: statusFilter,
-    skill: activeSkill !== 'All' ? activeSkill : undefined,
+    skill: apiSkill,
   };
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError } =
@@ -34,22 +42,62 @@ export function BountyGrid() {
   const allBounties = data?.pages.flatMap((p) => p.items) ?? [];
 
   const filteredBounties = useMemo(() => {
-    if (!debouncedSearch.trim()) return allBounties;
-    const q = debouncedSearch.toLowerCase();
-    return allBounties.filter(
-      (b) =>
-        b.title.toLowerCase().includes(q) ||
-        b.description.toLowerCase().includes(q) ||
-        b.skills.some((s) => s.toLowerCase().includes(q)) ||
-        (b.category ?? '').toLowerCase().includes(q),
-    );
-  }, [allBounties, debouncedSearch]);
+    let result = allBounties;
+
+    // Text search
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
+      result = result.filter(
+        (b) =>
+          b.title.toLowerCase().includes(q) ||
+          b.description.toLowerCase().includes(q) ||
+          b.skills.some((s) => s.toLowerCase().includes(q)) ||
+          (b.category ?? '').toLowerCase().includes(q),
+      );
+    }
+
+    // Multi-skill filter (client-side when multiple selected)
+    if (advancedFilters.skills.length > 1) {
+      result = result.filter((b) =>
+        advancedFilters.skills.some((skill) =>
+          b.skills.some((s) => s.toLowerCase() === skill.toLowerCase()),
+        ),
+      );
+    }
+
+    // Tier filter
+    if (advancedFilters.tiers.length > 0) {
+      result = result.filter((b) => advancedFilters.tiers.includes(b.tier));
+    }
+
+    // Domain/category filter
+    if (advancedFilters.domains.length > 0) {
+      result = result.filter((b) =>
+        advancedFilters.domains.some(
+          (domain) =>
+            (b.category ?? '').toLowerCase() === domain.toLowerCase() ||
+            b.category?.toLowerCase().includes(domain.toLowerCase()),
+        ),
+      );
+    }
+
+    // Reward range filter
+    if (advancedFilters.rewardMin > 0 || advancedFilters.rewardMax < Infinity) {
+      result = result.filter(
+        (b) =>
+          b.reward_amount >= advancedFilters.rewardMin &&
+          b.reward_amount <= advancedFilters.rewardMax,
+      );
+    }
+
+    return result;
+  }, [allBounties, debouncedSearch, advancedFilters]);
 
   return (
     <section id="bounties" className="py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header row */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <h2 className="font-sans text-2xl font-semibold text-text-primary">Open Bounties</h2>
           <div className="flex items-center gap-2">
             {/* Search bar */}
@@ -71,13 +119,41 @@ export function BountyGrid() {
                 </button>
               )}
             </div>
+
+            {/* Advanced filters toggle */}
+            <button
+              onClick={() => setShowAdvanced((s) => !s)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors duration-150 ${
+                showAdvanced
+                  ? 'bg-purple/20 text-purple-light border-purple/40'
+                  : 'bg-forge-800 text-text-muted border-border hover:border-border-hover hover:text-text-secondary'
+              }`}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className={showAdvanced ? 'text-purple-light' : ''}>
+                <path d="M1 3h12M3 7h8M5 11h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              Filters
+              {(advancedFilters.skills.length > 0 ||
+                advancedFilters.tiers.length > 0 ||
+                advancedFilters.domains.length > 0 ||
+                advancedFilters.rewardMin > 0 ||
+                advancedFilters.rewardMax < Infinity) && (
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-purple text-white text-xs font-bold">
+                  {advancedFilters.skills.length +
+                    advancedFilters.tiers.length +
+                    advancedFilters.domains.length +
+                    (advancedFilters.rewardMin > 0 || advancedFilters.rewardMax < Infinity ? 1 : 0)}
+                </span>
+              )}
+            </button>
+
             <Link
               to="/bounties/create"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald text-forge-950 font-semibold text-sm hover:bg-emerald/90 transition-colors duration-150"
             >
-              <Plus className="w-4 h-4" />
-              Post a Bounty
+              <Plus className="w-4 h-4" /> Post a Bounty
             </Link>
+
             {/* Status filter */}
             <div className="relative">
               <select
@@ -95,22 +171,12 @@ export function BountyGrid() {
           </div>
         </div>
 
-        {/* Filter pills */}
-        <div className="flex items-center gap-2 flex-wrap mb-8">
-          {FILTER_SKILLS.map((skill) => (
-            <button
-              key={skill}
-              onClick={() => setActiveSkill(skill)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-150 ${
-                activeSkill === skill
-                  ? 'bg-forge-700 text-text-primary'
-                  : 'text-text-muted hover:text-text-secondary bg-forge-800'
-              }`}
-            >
-              {skill}
-            </button>
-          ))}
-        </div>
+        {/* Advanced filters panel */}
+        {showAdvanced && (
+          <div className="mb-6 p-4 bg-forge-850 border border-border rounded-xl">
+            <AdvancedFilters filters={advancedFilters} onChange={setAdvancedFilters} />
+          </div>
+        )}
 
         {/* Loading state */}
         {isLoading && (
@@ -139,11 +205,9 @@ export function BountyGrid() {
           <div className="text-center py-16">
             <p className="text-text-muted text-lg mb-2">No bounties found</p>
             <p className="text-text-muted text-sm">
-              {debouncedSearch.trim()
-                ? `No results for "${debouncedSearch}". Try a different search.`
-                : activeSkill !== 'All'
-                  ? `Try a different language filter.`
-                  : 'Check back soon for new bounties.'}
+              {debouncedSearch.trim() || advancedFilters.skills.length > 0 || advancedFilters.tiers.length > 0 || advancedFilters.domains.length > 0
+                ? 'Try adjusting your filters or search terms.'
+                : 'Check back soon for new bounties.'}
             </p>
           </div>
         )}
