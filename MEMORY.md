@@ -36,19 +36,26 @@
 | #887 | SolFoundry/solfoundry | T1: countdown + search bar | ✅ OPEN |
 | #875 | SolFoundry/solfoundry | T1: Fix GitHub OAuth | ✅ OPEN |
 
-## AI Money Hunter 深度分析 (2026-04-12 更新)
+## AI Money Hunter 深度分析 (2026-04-13 更新)
 详见: ai_money_opportunities.md
 
-**TOP 5 机会 (已深度分析):**
-1. **AI 法律合同审查** 🥇 - $5K-50K/mo 潜力，YC 框架验证需求真实
-2. **AI SMB 客服自动化** 🥈 - Shopify 商家，$2K-20K/mo
-3. **垂直领域 MCP Server** 🥉 - 低执行成本，MCP 生态爆发期
-4. **Claude Code 套利** ⚠️ - 低壁垒，不推荐纯套利
-5. **AI 工具聚合平台** 📌 - 垂直聚合更可行
+**TOP 3 机会 (更新版):**
+1. **AI Phone Agent** 🥇 - $5K-100K/mo (电话自动化，企业10x性价比)
+2. **AI 合同审查** 🥈 - $5K-50K/mo (法律行业切入，合规风险低)
+3. **Multi-Agent 工作流** 🥉 - $10K-200K/mo (企业AI团队，长期护城河最高)
 
-**核心发现:** 法律合同审查壁垒是 "prompt 质量 + 领域理解"，不是专有数据集 — 可用 AI 构建。
+**关键数据 (OpenAI 2026-04):** 
+- 企业收入占比 40%+，年底预计与消费者持平
+- Codex 3M 周活，5X 增长
+- Multi-agent 已验证落地 (OpenAI 销售团队全自动化)
 
-**本周行动:** Streamlit MVP (法律合同审查) + 3 位律师测试
+**EUREKA 更新:**
+- Gen1 AI = 内容工具红海，Gen2 AI = 任务执行蓝海
+- 企业要"统一AI操作系统层"
+- 最容易变现的AI产品 = "AI文书工具"
+- 壁垒是 prompt 质量 + 工作流积累，不是数据集
+
+**本周行动:** AI Phone Agent MVP (诊所/餐厅垂直)
 
 ## 运行中的 Subagents
 | 名称 | 功能 |
@@ -77,10 +84,13 @@
 - 仓库: https://github.com/TeapoyY/ai-phone-agent; APK: ai-phone-agent-v0.8.12-aligned.apk
 
 ### FormForge (AI Form Filler)
-- 仓库: https://github.com/TeapoyY/ai-form-filler; FastAPI + PaddleOCR/EasyOCR + Ollama (gemma3:1b + minicpm-v); port 8001
-- PRIMARY: 2-step path (PyMuPDF text + gemma3:1b) ✅ 化学元素全对
-- Vision path (minicpm-v): ✅ 12/12 fields stable
-- OCR engines: PyMuPDF (text PDFs) ✅ | PaddleOCR: DISABLED on Windows CPU (PIR NotImplementedError) | DeepSeek-OCR: installed (needs SiliconFlow API key) | EasyOCR: disabled (slow)
+- 仓库: https://github.com/TeapoyY/ai-form-filler; FastAPI + PaddleOCR/EasyOCR + OpenRouter (gemini-2.5-flash-image); ports 8001+8002
+- E2E: 12/12 EN 10204 fields ✅ (2-step + Vision both passing as of 2026-04-13)
+- PRIMARY: 2-step path (PyMuPDF text + gemini-2.0-flash via OpenRouter)
+- Vision path (gemini-2.5-flash-image): ✅ 12/12 fields stable
+- OCR engines: PyMuPDF (text PDFs) ✅ | PaddleOCR: DISABLED on Windows CPU (PIR NotImplementedError) | DeepSeek-OCR: installed 0.3.0 (needs SiliconFlow/DeepSeek API key) | EasyOCR: DISABLED
+- ⚠️ Python PATH issue: WindowsApps stub (0 bytes) can shadow real python.exe. _hourly_test.py has PATH fix for Python312/Python311 paths. Use `py` launcher or set PATH explicitly.
+- Hourly cron: job id `910ff854-7da2-4cc8-a6f6-407129b3eb17`
 
 ### Parallax Train Widget
 - 仓库: https://github.com/TeapoyY/parallax-train-widget; 模式: Normal / Transparent / Desktop
