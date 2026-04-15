@@ -37,8 +37,9 @@
 | #875 | SolFoundry/solfoundry | T1: Fix GitHub OAuth | ✅ OPEN |
 
 ## AI Money Hunter (详见 ai_money_opportunities.md)
-- **TOP 3**: AI Phone Agent ($5K-100K/mo) | AI 合同审查 ($5K-50K/mo) | Multi-Agent ($10K-200K/mo)
+- **TOP 3**: AI Phone Agent | AI 合同审查 | Multi-Agent
 - **变现关键**: AI文书工具 > AI决策工具; 壁垒 = prompt质量 + 工作流积累
+- **新洞察 (2026-04)**: MCP生态爆发、Voice AI商品化、企业AI治理蓝海、中国平台Agent差异化
 - **本周行动**: AI Phone Agent MVP (诊所/餐厅垂直)
 
 ## 运行中的 Subagents
@@ -67,10 +68,12 @@
 - 仓库: https://github.com/TeapoyY/ai-phone-agent; APK: ai-phone-agent-v0.8.12-aligned.apk
 
 ### FormForge (AI Form Filler)
-- 仓库: https://github.com/TeapoyY/ai-form-filler; FastAPI + OpenRouter (gemini-2.5-flash-image); port 8001
-- E2E: 12/12 EN 10204 fields ✅; Vision path ✅; PyMuPDF text path ✅
-- OCR: PyMuPDF(text) ✅ | PaddleOCR DISABLED(Windows CPU) | DeepSeek-OCR(需API key) | EasyOCR DISABLED
-- ⚠️ Python PATH: WindowsApps stub shadowing python.exe — 用 `py` launcher 或显式 PATH
+- 仓库: https://github.com/TeapoyY/ai-form-filler; FastAPI + OpenRouter (gemini-2.5-flash-image); port 8002
+- E2E: 12/12 EN 10204 fields ✅ | /api/fill: 12/12 ✅ | Vision path ✅ | PyMuPDF text path ✅
+- OCR: PyMuPDF(text) ✅ | PaddleOCR DISABLED (shm.dll + PIR on Windows CPU — needs Linux/GPU) | DeepSeek-OCR ready (needs DS_OCR_API_KEY) | EasyOCR installed (DISABLED by default)
+- /health endpoint now shows `ocr_engines` dict with all engine status
+- ⚠️ Python PATH: WindowsApps stub shadowing python.exe — use full path `C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe`
+- Server start: `cd backend && python -c "import uvicorn; from main import app; uvicorn.run(app, host='0.0.0.0', port=8002)"`
 
 ### Parallax Train Widget
 - 仓库: https://github.com/TeapoyY/parallax-train-widget; 模式: Normal / Transparent / Desktop
