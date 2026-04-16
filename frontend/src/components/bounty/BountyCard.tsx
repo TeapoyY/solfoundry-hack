@@ -1,10 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GitPullRequest, Clock } from 'lucide-react';
+import { GitPullRequest } from 'lucide-react';
 import type { Bounty } from '../../types/bounty';
 import { cardHover } from '../../lib/animations';
-import { timeLeft, formatCurrency, LANG_COLORS } from '../../lib/utils';
+import { formatCurrency, LANG_COLORS } from '../../lib/utils';
+import { CountdownTimer } from './CountdownTimer';
 
 function TierBadge({ tier }: { tier: string }) {
   const styles: Record<string, string> = {
@@ -101,20 +102,17 @@ export function BountyCard({ bounty }: BountyCardProps) {
       <div className="mt-4 border-t border-border/50" />
 
       {/* Row 4: Reward + Meta */}
-      <div className="flex items-center justify-between mt-3">
-        <span className="font-mono text-lg font-semibold text-emerald">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-3">
+        <span className="font-mono text-base sm:text-lg font-semibold text-emerald order-2 sm:order-1">
           {formatCurrency(bounty.reward_amount, bounty.reward_token)}
         </span>
-        <div className="flex items-center gap-3 text-xs text-text-muted">
+        <div className="flex items-center gap-3 text-xs text-text-muted order-1 sm:order-2 flex-wrap">
           <span className="inline-flex items-center gap-1">
             <GitPullRequest className="w-3.5 h-3.5" />
             {bounty.submission_count} PRs
           </span>
           {bounty.deadline && (
-            <span className="inline-flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              {timeLeft(bounty.deadline)}
-            </span>
+            <CountdownTimer deadline={bounty.deadline} inline />
           )}
         </div>
       </div>

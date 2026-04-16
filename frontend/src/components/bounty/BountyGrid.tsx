@@ -23,7 +23,7 @@ export function BountyGrid() {
   const allBounties = data?.pages.flatMap((p) => p.items) ?? [];
 
   return (
-    <section id="bounties" className="py-16 md:py-24">
+    <section id="bounties" className="py-16 md:py-24 overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">

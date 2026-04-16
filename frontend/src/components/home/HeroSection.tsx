@@ -98,7 +98,7 @@ export function HeroSection() {
         variants={fadeIn}
         initial="initial"
         animate="animate"
-        className="w-full max-w-xl rounded-xl border border-border bg-forge-900/90 backdrop-blur-sm overflow-hidden shadow-2xl shadow-black/50"
+        className="w-full max-w-xl rounded-xl border border-border bg-forge-900/90 backdrop-blur-sm overflow-hidden shadow-2xl shadow-black/50 mx-4 sm:mx-0"
       >
         {/* Title bar */}
         <div className="flex items-center gap-2 px-4 py-2.5 bg-forge-800 border-b border-border">
@@ -154,7 +154,7 @@ export function HeroSection() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.5 }}
-        className="font-display text-4xl md:text-5xl font-bold text-text-primary tracking-wider text-center mt-10"
+        className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary tracking-wider text-center mt-10"
       >
         THE AI-POWERED BOUNTY{' '}
         <span className="text-emerald">FORGE</span>
