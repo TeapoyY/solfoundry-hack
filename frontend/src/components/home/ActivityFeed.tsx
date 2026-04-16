@@ -83,27 +83,43 @@ export function ActivityFeed({ events }: { events?: ActivityEvent[] }) {
     setVisibleEvents(displayEvents.slice(0, 4));
   }, [events]);
 
+  // Determine if we're showing real data vs mock fallback
+  const isUsingMockData = !events?.length;
+
   return (
     <section className="w-full border-y border-border bg-forge-900/50 py-4 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center gap-3 mb-3">
-          <span className="w-2 h-2 rounded-full bg-emerald animate-pulse-glow" />
+          <span className={`w-2 h-2 rounded-full ${isUsingMockData ? 'bg-emerald' : 'bg-amber'} animate-pulse-glow`} />
           <span className="font-mono text-xs text-text-muted uppercase tracking-wider">Recent Activity</span>
+          {isUsingMockData && (
+            <span className="font-mono text-xs text-text-muted opacity-60">(demo)</span>
+          )}
         </div>
         <div className="space-y-1">
           <AnimatePresence mode="popLayout">
-            {visibleEvents.map((event) => (
-              <motion.div
-                key={event.id}
-                variants={slideInRight}
-                initial="initial"
-                animate="animate"
-                exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
-                layout
+            {visibleEvents.length === 0 ? (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-sm text-text-muted py-2 px-3"
               >
-                <EventItem event={event} />
-              </motion.div>
-            ))}
+                No recent activity
+              </motion.p>
+            ) : (
+              visibleEvents.map((event) => (
+                <motion.div
+                  key={event.id}
+                  variants={slideInRight}
+                  initial="initial"
+                  animate="animate"
+                  exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+                  layout
+                >
+                  <EventItem event={event} />
+                </motion.div>
+              ))
+            )}
           </AnimatePresence>
         </div>
       </div>
