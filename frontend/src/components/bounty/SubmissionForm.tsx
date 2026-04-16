@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Loader2, Check, Copy } from 'lucide-react';
 import type { Bounty } from '../../types/bounty';
 import { createSubmission, getReviewFee, verifyReviewFee } from '../../api/bounties';
+import { useToast } from '../../contexts/ToastContext';
 
 /**
  * Props for the SubmissionForm component.
@@ -18,6 +19,7 @@ interface SubmissionFormProps {
  * Handles fee verification via FNDRY token and posts the submission to the API.
  */
 export function SubmissionForm({ bounty, onSuccess }: SubmissionFormProps) {
+  const toast = useToast();
   const hasRepo = bounty.has_repo ?? !!bounty.github_repo_url;
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
@@ -47,11 +49,14 @@ export function SubmissionForm({ bounty, onSuccess }: SubmissionFormProps) {
       const result = await verifyReviewFee({ bounty_id: bounty.id, tx_signature: txSig });
       if (result.verified) {
         setFeeVerified(true);
+        toast.success('Review fee verified! You can now submit your solution.', 'Fee Verified');
       } else {
         setError(result.error ?? 'Fee verification failed. Check your transaction signature.');
+        toast.error(result.error ?? 'Fee verification failed.', 'Verification Failed');
       }
     } catch {
       setError('Fee verification failed. Try again.');
+      toast.error('Fee verification failed. Try again.', 'Error');
     } finally {
       setVerifying(false);
     }
@@ -70,9 +75,12 @@ export function SubmissionForm({ bounty, onSuccess }: SubmissionFormProps) {
         tx_signature: txSig,
       });
       setSuccess(true);
+      toast.success('Your solution has been submitted for AI review.', 'Submission Received!');
       onSuccess?.();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Submission failed. Try again.');
+      const msg = e instanceof Error ? e.message : 'Submission failed. Try again.';
+      setError(msg);
+      toast.error(msg, 'Submission Failed');
     } finally {
       setSubmitting(false);
     }
