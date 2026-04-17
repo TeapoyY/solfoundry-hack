@@ -1,79 +1,45 @@
 # MEMORY.md - 长期记忆
 
 ## 经验总结
+- Python PATH: WindowsApps stub → 用完整路径 `C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe`
+- Clash 导致 Gateway 断开: `gateway.cmd` 添加 `NO_PROXY` 绕过 127.0.0.1, localhost, *.local, feishu-cn, openapi.feishu.cn
+- Capacitor/Vite 白屏: `vite.config.ts` 中添加 `base: './'`
+- Claude Code: `claude --version` = 2.1.79; Dev agent timeout: 1小时; 用 `--permission-mode bypassPermissions --print`
+- GitHub CLI: `winget install GitHub.cli` + `gh auth login`; ClawHub: `clawhub install <skill>`
 
-### 任务错误处理原则 ⚠️
-- 遇到错误主动调查，不只汇报：检查 cron 日志、错误日志、进程状态，尝试重现并修复
+## AI Trader 状态 (2026-04-17)
+- ETH: -$36.91 | BTC: -$354.10 | Total: -$391.01
+- 持仓: 1.49 ETH @ 2205, 0.444 BTC @ 71067
 
-### 环境安装
-- 遇到未安装环境时尝试自行安装 (winget, choco, scoop, npm)
+## 项目
+- **FormForge** (port 8001): FastAPI + PyMuPDF + PaddleOCR + Ollama; E2E 12/12 EN10204 ✅; Vision endpoint intermittent; PaddleOCR reader per-call fix (commit aed462e)
+- **LearnAny** (port 8003): ✅ 费曼+苏格拉底学习引擎
+- **Douyin Game Forge** (port 8010): Claude Code fallback bug, Chinese encoding issue
+- **AI News** (port 8002): ✅
+- **WorldPredict** (port 8011): ✅
+- **AI Phone Agent**: APK v0.8.12, no Python backend
 
-### 代理问题
-- Clash 可能导致 Gateway 断开: 在 `gateway.cmd` 添加 `NO_PROXY` 绕过 127.0.0.1, localhost, *.local, feishu-cn, openapi.feishu.cn
+## 服务重启记录 (2026-04-17)
+- AI News / WorldPredict / LearnAny: 06:54 重启 (ports 8002/8003/8011)
+- FormForge: 2026-04-16 22:18 重启
 
-### Capacitor/Vite 白屏问题
-- 解决: `vite.config.ts` 中添加 `base: './'`
+## Bounty Hunt
+- 目标: BountyHub.dev / Algora.io; **验证真钱**: Issue 正文写 `$XX`
+- 无 open PR (last: #887, #875)
 
-### APK 签名
-- keystore: `ai-phone-agent-release.keystore`, Alias: aiphonagent, Storepass/Keypass: android123
+## Cron Jobs
+| Job | Schedule | Status |
+|-----|----------|--------|
+| gateway-keepalive | every 10m | ✅ |
+| bounty-hunt-monitor | every 1h | ✅ |
+| ai-money-hunter | every 1h | ✅ |
 
-### 飞书云盘 API
-- APK 下载文件夹 token: `C6lffONgvlxfZRdtZdfcwZCHnQh`
-
-## 开发任务规则 ⚠️
-- 使用 Claude Code: `claude --permission-mode bypassPermissions --print 'task'`
-- 不要手动编写代码
-
-## Bounty Hunt 规则 ⚠️
-1. 找 Bounty: BountyHub.dev / Algora.io / GitHub `💎 bounty` label
-2. **验证真钱**: Issue 正文中写明 `$XX` 或 verified token; `bounty` 标签 ≠ 真钱
-3. Claude Code: `claude --print "implement..."`
-4. PR 必须 `gh pr list --author TeapoyY` 核实真实作者
-
-### Active PRs
-| PR | Repo | Bounty | Status |
-|----|------|--------|--------|
-| #887 | SolFoundry/solfoundry | T1: countdown + search bar | ✅ OPEN |
-| #875 | SolFoundry/solfoundry | T1: Fix GitHub OAuth | ✅ OPEN |
-
-## AI Money Hunter (详见 ai_money_opportunities.md)
-- **TOP 3**: AI Phone Agent | AI 合同审查 | Multi-Agent
-- **变现关键**: AI文书工具 > AI决策工具; 壁垒 = prompt质量 + 工作流积累
-- **新洞察 (2026-04)**: MCP生态爆发、Voice AI商品化、企业AI治理蓝海、中国平台Agent差异化
-- **本周行动**: AI Phone Agent MVP (诊所/餐厅垂直)
-
-## 运行中的 Subagents
-| 名称 | 功能 |
-|------|------|
-| app-dev | AI News + WorldPredict 开发 |
-| stock-monitor | 股票盯盘 (拓维信息/华胜天成/心动公司) |
-| ai-trader | AI Trader 加密货币交易 |
-| ai-money-hunter | AI自动赚钱机会探索 |
-
-## 工具和 Skills
-- GitHub CLI: `winget install GitHub.cli` → `gh auth login`; ClawHub: `clawhub install <skill>`
-- Learnings 目录: `C:\Users\Administrator\.openclaw\workspace\.learnings\`
-- Claude Code CLI: `claude --version` = 2.1.79; Dev agent timeout: 1小时
-
-## 应用开发
-
-### LearnAny (2026-04-12)
-- 仓库: https://github.com/TeapoyY/learn-any; FastAPI (port 8003) + 单文件 SPA
-- 费曼+苏格拉底 8阶段渐进学习引擎
-
-### AI News / WorldPredict
-- AI News: port 8002/3002; WorldPredict: port 8011/3004
-
-### AI Phone Agent
-- 仓库: https://github.com/TeapoyY/ai-phone-agent; APK: ai-phone-agent-v0.8.12-aligned.apk
-
-### FormForge (AI Form Filler)
-- 仓库: https://github.com/TeapoyY/ai-form-filler; FastAPI + OpenRouter (gemini-2.5-flash-image); port 8002
-- E2E: 12/12 EN 10204 fields ✅ | /api/fill: 12/12 ✅ | Vision path ✅ | PyMuPDF text path ✅
-- OCR: PyMuPDF(text) ✅ | PaddleOCR DISABLED (shm.dll + PIR on Windows CPU — needs Linux/GPU) | DeepSeek-OCR ready (needs DS_OCR_API_KEY) | EasyOCR installed (DISABLED by default)
-- /health endpoint now shows `ocr_engines` dict with all engine status
-- ⚠️ Python PATH: WindowsApps stub shadowing python.exe — use full path `C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe`
-- Server start: `cd backend && python -c "import uvicorn; from main import app; uvicorn.run(app, host='0.0.0.0', port=8002)"`
-
-### Parallax Train Widget
-- 仓库: https://github.com/TeapoyY/parallax-train-widget; 模式: Normal / Transparent / Desktop
+## 应用状态 (2026-04-17)
+| Port | Service | Status |
+|------|---------|--------|
+| 8001 | FormForge | ✅ |
+| 8002 | AI News | ✅ (restarted 06:54) |
+| 8003 | LearnAny | ✅ (restarted 06:54) |
+| 8010 | Douyin Game Forge backend | ✅ |
+| 8011 | WorldPredict | ✅ (restarted 06:54) |
+| 3000 | Douyin Game Forge frontend | ✅ IPv6 localhost |

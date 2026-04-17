@@ -1,42 +1,44 @@
 # HEARTBEAT.md - Active Tasks Monitor
-Updated: 2026-04-16 08:34 HKT
+Updated: 2026-04-17 10:49 HKT
 
 ## Active Projects
 
 ### FormForge (AI Form Filler)
 - **Repo**: https://github.com/TeapoyY/ai-form-filler
-- **Stack**: FastAPI + PyMuPDF + PaddleOCR + OpenRouter (Gemini 2.5 Flash Image)
-- **Status**: ✅ Fully working (port 8001)
-- **Backend**: port 8001 (pid dynamic, use start_server.py)
-- **OCR**: PyMuPDF text ✅ | PaddleOCR ENABLED (3.4.0 + paddlepaddle 3.0.0, ~30s cold-start) | EasyOCR disabled | DeepSeek OCR needs API key
-- **LLM**: OpenRouter google/gemini-2.5-flash-image via httpx (proxies={...}, trust_env=False)
-- **E2E**: 12/12 EN10204 ✅ (2-step ~9s, Vision ~220s)
+- **Stack**: FastAPI + PyMuPDF + PaddleOCR + Ollama (gemma3:1b + minicpm-v)
+- **Status**: ✅ 2-step E2E working; Vision endpoint intermittent
+- **Backend**: port 8001 (via `python start_ff.py`)
+- **OCR**: PyMuPDF text ✅ | PaddleOCR 3.4.0 + paddlepaddle 3.0.0 ✅ (~37s cold-start) | DeepSeek OCR 0.3.0 (needs DS_OCR_API_KEY) | EasyOCR disabled
+- **LLM**: Ollama gemma3:1b (text) + minicpm-v (vision) — direct localhost, no proxy
+- **E2E**: 12/12 EN10204 ✅ (2-step: OCR ~3s + extract ~10s)
+- **⚠️ Vision endpoint**: Intermittently hangs when calling Ollama minicpm-v from FastAPI. Direct Ollama calls work fine (~20s). Root cause unclear — possibly httpx async threading issue. 2-step path is the reliable workhorse.
 - **⚠️ Python PATH**: WindowsApps stub → 用完整路径 `C:\...\Python311\python.exe`
-- **Server**: `cd backend && python start_server.py` (default port 8001)
-- **Test**: `python quick_e2e.py` (smoke test, no vision)
+- **Server**: `cd backend && python start_ff.py` (uses .env for PORT=8001, OLLAMA_VISION_MODEL=minicpm-v)
+- **Setup after clone**: Copy `.env.example` → `.env`, run `backend/create_test_samples.py`
 
-### LearnAny (新)
+### Douyin Game Forge (抖音游戏工坊) 🆕
+- **Repo**: https://github.com/TeapoyY/douyin-game-forge
+- **Stack**: Node.js/Express (8010) + React 18 + Vite + TypeScript (3000)
+- **Status**: ✅ Backend+Frontend running
+- **Issue**: Claude Code not called - uses hardcoded fallback puzzle/2048 template
+- **Bugs**: Chinese encoding garbled in API responses
+- **Path Fix**: outputDir = `..\..\..\output` (4 levels up from backend/)
+- **Test**: Create survivor-like → generates puzzle game instead
+
+### LearnAny
 - **Repo**: https://github.com/TeapoyY/learn-any
-- **Stack**: FastAPI + OpenRouter + 单文件 SPA
-- **Status**: ✅ 运行中 (port 8003)
+- **Stack**: FastAPI + MiniMax + 单文件 SPA
+- **Status**: ✅ Running (port 8003)
 - **功能**: 费曼+苏格拉底渐进学习引擎
-- **注意**: fallback硬编码计划(网络不通时)
 
 ### AI News / WorldPredict
 - **Repos**: ai-news, world-predict
 - **Status**: ✅ Running
 - **Ports**: 8002 (news), 8011 (wp), 3002/3004 (frontend)
 
-### LearnAny (新)
-- **Repo**: https://github.com/TeapoyY/learn-any
-- **Stack**: FastAPI + MiniMax + 单文件 SPA
-- **Status**: ✅ 新建完成
-- **Backend**: port 8003
-- **功能**: 费曼+苏格拉底渐进学习引擎
-
 ### Parallax Train Widget
 - **Repo**: https://github.com/TeapoyY/parallax-train-widget
-- **New**: Transparent/Desktop embed modes added (2026-04-09)
+- **Status**: ✅
 
 ## Bounty Hunt ⚠️
 1. Find: BountyHub.dev / Algora.io
@@ -44,8 +46,8 @@ Updated: 2026-04-16 08:34 HKT
 3. Claude Code: `claude --print "implement..."`
 4. PR verification: `gh pr list --author TeapoyY`
 
-### Active PRs (verified 2026-04-16 08:34 HKT)
-⚠️ No open PRs — need new bounty hunt targets!
+### Active PRs (verified 2026-04-16 21:02 HKT)
+⚠️ No open PRs — need new bounty targets!
 
 ## Cron Jobs
 | Job | Schedule | Status |
@@ -102,8 +104,12 @@ Updated: 2026-04-16 08:34 HKT
 ---
 
 ## Service Ports
-- AI News backend: 8002
-- WorldPredict backend: 8011
-- FormForge backend: 8001
-- AI Phone Agent backend: 8013
-- LearnAny backend: 8003
+| Port | Service | Status |
+|------|---------|--------|
+| 8001 | FormForge backend | ✅ |
+| 8002 | AI News backend | ✅ (restarted 06:54) |
+| 8003 | LearnAny backend | ✅ (restarted 06:54) |
+| 8010 | Douyin Game Forge backend | ✅ |
+| 8011 | WorldPredict backend | ✅ (restarted 06:54) |
+| 3000 | Douyin Game Forge frontend | ✅ (only IPv6 localhost) |
+| 3002/3004 | AI News/WorldPredict frontend | ✅ |
