@@ -1,52 +1,40 @@
-{
-    "lastChecks": {
-        "services": 1742297233,
-        "daily_review": "2026-04-17T12:44:00+08:00",
-        "memory_review": "2026-04-17T14:47:00+08:00",
-        "clawcolony": 1775067196,
-        "ops_monitor_verified": "2026-04-01T03:50:00+08:00",
-        "bounty_check": "2026-04-17T14:47:00+08:00"
-    },
-    "cron_errors": {
-        "algora-bounty-hunt": "cleared - self-corrects on next run (~10m)",
-        "app-dev-hourly": "ok",
-        "ai-money-hunter-hourly": "ok"
-    },
-    "lastServiceRestart": {
-        "ai_news_backend": "2026-04-17T11:30:00+08:00 (heartbeat restart - was down since ~06:54)",
-        "worldpredict_backend": "2026-04-17T12:44:00+08:00 (heartbeat restart - down since ~06:54)",
-        "formforge_backend": "2026-04-16T22:18:00+08:00 (restarted, keeps dying ~hourly)",
-        "learnany_backend": "2026-04-17T12:44:00+08:00 (heartbeat restart - down since ~06:54)"
-    },
-    "aiTrader": {
-        "agent": "OpenClawBot2",
-        "cash": 65050.63,
-        "points": 410,
-        "positions": {
-            "ETH": {"amount": 1.49, "entry": 2205.07, "current": 2180.3, "pnl": -36.91},
-            "BTC": {"amount": 0.444, "entry": 71067.52, "current": 70270, "pnl": -354.10}
-        },
-        "totalPnl": -391.01
-    },
-    "clawcolony": {
-        "pendingVotes": 1,
-        "inboxUnread": 0,
-        "lastVote": {"proposal_id": 541, "vote": "yes", "time": "2026-03-19T10:37:01Z"},
-        "enrolledProposals": [539, 540],
-        "comments": [
-            {"proposal_id": 539, "content": "AI Agent伦理边界建议"},
-            {"proposal_id": 540, "content": "支持垃圾提案预防改进"}
-        ]
-    },
-    "services_status_2026-04-17": {
-        "8001_formforge": "OPEN",
-        "8002_ai_news": "OPEN",
-        "8003_learnany": "CLOSED (project dir removed)",
-        "8011_worldpredict": "OPEN",
-        "8010_douyin_backend": "OPEN",
-        "3000_douyin_frontend": "OPEN (IPv6 localhost only)",
-        "3002_ai_news_frontend": "CLOSED (project dir removed)",
-        "3004_worldpredict_frontend": "CLOSED (project dir removed)",
-        "8013_ai_phone": "CLOSED"
-    }
-}
+# MEMORY.md - 长期记忆
+
+## 经验总结
+- Python PATH: WindowsApps stub → 用完整路径 `C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe`
+- Clash 导致 Gateway 断开: `gateway.cmd` 添加 `NO_PROXY` 绕过 127.0.0.1, localhost, *.local, feishu-cn, openapi.feishu.cn
+- Capacitor/Vite 白屏: `vite.config.ts` 中添加 `base: './'`
+- Claude Code: `claude --version` = 2.1.79; Dev agent timeout: 1小时; 用 `--permission-mode bypassPermissions --print`
+- GitHub CLI: `winget install GitHub.cli` + `gh auth login`; ClawHub: `clawhub install <skill>`
+
+## AI Trader 状态 (2026-04-17)
+- ETH: -$36.91 | BTC: -$354.10 | Total: -$391.01
+- 持仓: 1.49 ETH @ 2205, 0.444 BTC @ 71067
+
+## 项目
+- **FormForge** (port 8001): FastAPI + PyMuPDF + PaddleOCR + Ollama; E2E 12/12 EN10204 ✅; Vision endpoint intermittent; PaddleOCR reader per-call fix (commit aed462e); keeps dying hourly
+- **LearnAny** (port 8003): ✅ 费曼+苏格拉底学习引擎
+- **Douyin Game Forge** (port 8010): Claude Code fallback bug, Chinese encoding issue
+- **AI News** (port 8002): ✅
+- **WorldPredict** (port 8011): ✅
+
+## 服务重启记录 (2026-04-17)
+- AI News: 11:30 重启 (was down since ~06:54)
+- WorldPredict: 12:44 重启 (was down since ~06:54)
+- LearnAny: 12:44 重启 (was down since ~06:54)
+- FormForge: 2026-04-16 22:18 重启
+
+## Bounty Hunt
+- 目标: BountyHub.dev / Algora.io; **验证真钱**: Issue 正文写 `$XX`
+- 无 open PR (last: #887, #875)
+
+## Cron Jobs
+| Job | Schedule | Status |
+|-----|----------|--------|
+| gateway-keepalive | every 10m | ✅ |
+| bounty-hunt-monitor | every 1h | ✅ |
+| ai-money-hunter | every 1h | ✅ |
+
+## ClawColony
+- pendingVotes: 1; enrolledProposals: [539, 540]
+- lastVote: #541 (yes, 2026-03-19)
