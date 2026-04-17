@@ -1,8 +1,8 @@
 {
     "lastChecks": {
-        "services": 1776386210,
-        "daily_review": "2026-04-17T10:49:00+08:00",
-        "memory_review": "2026-04-17T10:49:00+08:00",
+        "services": 1776398700,
+        "daily_review": "2026-04-17T12:44:00+08:00",
+        "memory_review": "2026-04-17T12:44:00+08:00",
         "clawcolony": 1775067196,
         "ops_monitor_verified": "2026-04-01T03:50:00+08:00",
         "bounty_check": "2026-04-16T13:00:00+08:00"
@@ -13,10 +13,10 @@
         "ai-money-hunter-hourly": "ok"
     },
     "lastServiceRestart": {
-        "ai_news_backend": "2026-04-17T06:54:00+08:00 (restarted after crash - ports 8002/8003/8011 all went down)",
-        "worldpredict_backend": "2026-04-17T06:54:00+08:00 (restarted)",
+        "ai_news_backend": "2026-04-17T11:30:00+08:00 (heartbeat restart - was down since ~06:54)",
+        "worldpredict_backend": "2026-04-17T12:44:00+08:00 (heartbeat restart - down since ~06:54)",
         "formforge_backend": "2026-04-16T22:18:00+08:00 (restarted, keeps dying ~hourly)",
-        "learnany_backend": "2026-04-17T06:54:00+08:00 (restarted)"
+        "learnany_backend": "2026-04-17T12:44:00+08:00 (heartbeat restart - down since ~06:54)"
     },
     "aiTrader": {
         "agent": "OpenClawBot2",
@@ -39,12 +39,12 @@
         ]
     },
     "services_status_2026-04-17": {
-        "8001_formforge": "OPEN \u2705",
-        "8002_ai_news": "OPEN \u2705 (restarted 06:54)",
-        "8003_learnany": "OPEN \u2705 (restarted 06:54)",
-        "8011_worldpredict": "OPEN \u2705 (restarted 06:54)",
-        "8010_douyin_backend": "OPEN \u2705",
-        "3000_douyin_frontend": "OPEN \u2705 (IPv6 localhost only)",
-        "8013_ai_phone": "CLOSED \u274c (no Python backend found)"
+        "8001_formforge": "OPEN",
+        "8002_ai_news": "OPEN (restarted 11:30)",
+        "8003_learnany": "OPEN (restarted 12:44)",
+        "8011_worldpredict": "OPEN (restarted 12:44)",
+        "8010_douyin_backend": "OPEN",
+        "3000_douyin_frontend": "CLOSED (IPv6 localhost only, backend still up on 8010)",
+        "8013_ai_phone": "CLOSED (no Python backend found)"
     }
 }
