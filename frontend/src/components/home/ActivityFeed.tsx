@@ -2,17 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { slideInRight } from '../../lib/animations';
 import { timeAgo } from '../../lib/utils';
+import { useActivity } from '../../hooks/useActivity';
+import type { ActivityEvent } from '../../api/stats';
 
-interface ActivityEvent {
-  id: string;
-  type: 'completed' | 'submitted' | 'posted' | 'review';
-  username: string;
-  avatar_url?: string | null;
-  detail: string;
-  timestamp: string;
-}
-
-// Mock events for when API doesn't return activity
+// Mock events for when API doesn't return activity or during initial load
 const MOCK_EVENTS: ActivityEvent[] = [
   {
     id: '1',
@@ -76,12 +69,16 @@ function EventItem({ event }: { event: ActivityEvent }) {
 }
 
 export function ActivityFeed({ events }: { events?: ActivityEvent[] }) {
-  const displayEvents = events?.length ? events.slice(0, 4) : MOCK_EVENTS;
+  const { data: apiEvents, isError } = useActivity();
+
+  // Prefer prop or API events, fall back to mock when API unavailable
+  const liveEvents = events ?? (isError ? [] : apiEvents) ?? [];
+  const displayEvents = liveEvents.length > 0 ? liveEvents : MOCK_EVENTS;
   const [visibleEvents, setVisibleEvents] = useState<ActivityEvent[]>(displayEvents.slice(0, 4));
 
   useEffect(() => {
     setVisibleEvents(displayEvents.slice(0, 4));
-  }, [events]);
+  }, [liveEvents, displayEvents]);
 
   return (
     <section className="w-full border-y border-border bg-forge-900/50 py-4 overflow-hidden">

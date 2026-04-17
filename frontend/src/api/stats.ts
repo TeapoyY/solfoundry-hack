@@ -12,3 +12,21 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     total_bounties: (r.total_bounties as number) ?? 0,
   };
 }
+
+export interface ActivityEvent {
+  id: string;
+  type: 'completed' | 'submitted' | 'posted' | 'review';
+  username: string;
+  avatar_url?: string | null;
+  detail: string;
+  timestamp: string;
+}
+
+export async function getActivity(): Promise<ActivityEvent[]> {
+  try {
+    const events = await apiClient<ActivityEvent[]>('/api/activity');
+    return Array.isArray(events) ? events : [];
+  } catch {
+    return [];
+  }
+}
