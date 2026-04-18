@@ -6,6 +6,7 @@ import type { Bounty } from '../../types/bounty';
 import { timeLeft, timeAgo, formatCurrency, LANG_COLORS } from '../../lib/utils';
 import { useAuth } from '../../hooks/useAuth';
 import { SubmissionForm } from './SubmissionForm';
+import { BountyFlowDiagram } from './BountyFlowDiagram';
 import { fadeIn } from '../../lib/animations';
 
 interface BountyDetailProps {
@@ -30,6 +31,12 @@ export function BountyDetail({ bounty }: BountyDetailProps) {
       <Link to="/" className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-text-secondary transition-colors mb-6">
         <ArrowLeft className="w-4 h-4" /> Back to Bounties
       </Link>
+
+      {/* Bounty lifecycle flow diagram */}
+      <div className="rounded-xl border border-border bg-forge-900 p-4">
+        <p className="text-xs font-mono text-text-muted mb-3 uppercase tracking-wider">Bounty Lifecycle</p>
+        <BountyFlowDiagram status={bounty.status} />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main content */}
