@@ -6,23 +6,32 @@
 - Capacitor/Vite 白屏: `vite.config.ts` 中添加 `base: './'`
 - Claude Code: `claude --version` = 2.1.79; Dev agent timeout: 1小时; 用 `--permission-mode bypassPermissions --print`
 - GitHub CLI: `winget install GitHub.cli` + `gh auth login`; ClawHub: `clawhub install <skill>`
+- **开发流程**: 每次迭代后必须测试，测试通过再打包 APK
 
 ## AI Trader 状态 (2026-04-17)
 - ETH: -$36.91 | BTC: -$354.10 | Total: -$391.01
 - 持仓: 1.49 ETH @ 2205, 0.444 BTC @ 71067
 
-## 项目
-- **FormForge** (port 8001): FastAPI + PyMuPDF + PaddleOCR + Ollama; E2E 12/12 EN10204 ✅; Vision endpoint intermittent; PaddleOCR reader per-call fix (commit aed462e); keeps dying hourly
-- **LearnAny** (port 8003): ✅ 费曼+苏格拉底学习引擎
-- **Douyin Game Forge** (port 8010): Claude Code fallback bug, Chinese encoding issue
-- **AI News** (port 8002): ✅
-- **WorldPredict** (port 8011): ✅
+## Polymarket Elon Tracker 🆕
+- **系统**: `C:\Users\Administrator\.openclaw\workspace\polymarket-elon-analyzer\`
+- **Cron**: `f5c6ff90-7ef1-40f6-958e-3a4c1705c644` (polymarket-elon-monitor) every 1h
+- **入口**: `run_monitor.py` (每小时自动运行)
+- **核心**: ThresholdEngine + VelocityAnalysis; Kelly criterion + velocity ratio signal
+- **策略**: velocity ratio >= 1.5 且价格 < 95% → BET YES
+- **限制**: Polymarket API 被防火墙封锁，用 OpenClaw browser 爬取; xtracker.polymarket.com 返回 404
+- **信号**: 2个 YES (Apr14-21 116posts 57% @ conf 73.1%, May2026 50% @ conf 81.0%)
 
-## 服务重启记录 (2026-04-17)
-- AI News: 11:30 重启 (was down since ~06:54)
-- WorldPredict: 12:44 重启 (was down since ~06:54)
-- LearnAny: 12:44 重启 (was down since ~06:54)
-- FormForge: 2026-04-16 22:18 重启
+## 项目
+- **FormForge** (port 8001): FastAPI + PyMuPDF + PaddleOCR + Ollama; E2E 12/12 EN10204 ✅; commit aed462e
+- **Polymarket Elon Analyzer** (`polymarket-elon-analyzer/`): scraper/analysis/trading/backtest/dashboard/elon_tracker 多模块
+- **Lucky Defense** (`lucky-defense/index.html`): 单文件 HTML5塔防游戏，5 lanes，6 类型，auto-merge
+- **LearnAny** (port 8003): ✅ 费曼+苏格拉底学习引擎
+- **AI News** (port 8002): ✅ | **WorldPredict** (port 8011): ✅
+- **Douyin Game Forge** (port 8010): Claude Code fallback bug; 项目目录已移除
+
+## 服务状态 (2026-04-18)
+- 8002/8003/8011: 05:40 批量重启恢复（上次崩溃 ~06:54 yesterday）
+- FormForge (8001): down（2026-04-17 22:18 重启）
 
 ## Bounty Hunt
 - 目标: BountyHub.dev / Algora.io; **验证真钱**: Issue 正文写 `$XX`
@@ -36,5 +45,4 @@
 | ai-money-hunter | every 1h | ✅ |
 
 ## ClawColony
-- pendingVotes: 1; enrolledProposals: [539, 540]
-- lastVote: #541 (yes, 2026-03-19)
+- pendingVotes: 1; enrolledProposals: [539, 540]; lastVote: #541 (yes, 2026-03-19)
