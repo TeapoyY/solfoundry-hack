@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronDown, Loader2, Plus } from 'lucide-react';
+import { ChevronDown, Loader2, Plus, Search, X } from 'lucide-react';
 import { BountyCard } from './BountyCard';
 import { useInfiniteBounties } from '../../hooks/useBounties';
 import { staggerContainer, staggerItem } from '../../lib/animations';
@@ -11,6 +11,16 @@ const FILTER_SKILLS = ['All', 'TypeScript', 'Rust', 'Solidity', 'Python', 'Go', 
 export function BountyGrid() {
   const [activeSkill, setActiveSkill] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('open');
+  const [searchInput, setSearchInput] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const params = {
     status: statusFilter,
@@ -22,13 +32,45 @@ export function BountyGrid() {
 
   const allBounties = data?.pages.flatMap((p) => p.items) ?? [];
 
+  // Filter by search term (title, description, tags/skills)
+  const filteredBounties = useMemo(() => {
+    if (!debouncedSearch) return allBounties;
+    const term = debouncedSearch.toLowerCase();
+    return allBounties.filter(
+      (b) =>
+        b.title.toLowerCase().includes(term) ||
+        b.description.toLowerCase().includes(term) ||
+        (b.category && b.category.toLowerCase().includes(term)) ||
+        b.skills.some((s) => s.toLowerCase().includes(term))
+    );
+  }, [allBounties, debouncedSearch]);
+
   return (
     <section id="bounties" className="py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <h2 className="font-sans text-2xl font-semibold text-text-primary">Open Bounties</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search bounties..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-9 pr-8 py-1.5 w-52 sm:w-64 bg-forge-800 border border-border rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:border-emerald outline-none transition-colors duration-150"
+              />
+              {searchInput && (
+                <button
+                  onClick={() => setSearchInput('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             <Link
               to="/bounties/create"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald text-forge-950 font-semibold text-sm hover:bg-emerald/90 transition-colors duration-150"
@@ -102,8 +144,16 @@ export function BountyGrid() {
           </div>
         )}
 
+        {/* No search results */}
+        {!isLoading && !isError && allBounties.length > 0 && filteredBounties.length === 0 && (
+          <div className="text-center py-16">
+            <p className="text-text-muted text-lg mb-2">No results for "{debouncedSearch}"</p>
+            <p className="text-text-muted text-sm">Try a different search term or clear the filters.</p>
+          </div>
+        )}
+
         {/* Bounty grid */}
-        {!isLoading && allBounties.length > 0 && (
+        {!isLoading && filteredBounties.length > 0 && (
           <motion.div
             variants={staggerContainer}
             initial="initial"
@@ -111,7 +161,7 @@ export function BountyGrid() {
             viewport={{ once: true, margin: '-50px' }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
           >
-            {allBounties.map((bounty) => (
+            {filteredBounties.map((bounty) => (
               <motion.div key={bounty.id} variants={staggerItem}>
                 <BountyCard bounty={bounty} />
               </motion.div>
@@ -119,8 +169,8 @@ export function BountyGrid() {
           </motion.div>
         )}
 
-        {/* Load more */}
-        {hasNextPage && (
+        {/* Load more — hidden during search to avoid confusion */}
+        {hasNextPage && !debouncedSearch && (
           <div className="mt-10 text-center">
             <button
               onClick={() => fetchNextPage()}
