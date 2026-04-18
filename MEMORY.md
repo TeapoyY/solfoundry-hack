@@ -23,11 +23,19 @@
 
 ## 项目
 - **FormForge** (port 8001): FastAPI + PyMuPDF + PaddleOCR + Ollama; E2E 12/12 EN10204 ✅; commit aed462e
-- **Polymarket Elon Analyzer** (`polymarket-elon-analyzer/`): scraper/analysis/trading/backtest/dashboard/elon_tracker 多模块
+- **Polymarket Elon Tracker** (`polymarket-elon-tracker/`): xTracker Clone，SQLite + browser CLI采集 + 3情景MC分析
 - **Lucky Defense** (`lucky-defense/index.html`): 单文件 HTML5塔防游戏，5 lanes，6 类型，auto-merge
 - **LearnAny** (port 8003): ✅ 费曼+苏格拉底学习引擎
 - **AI News** (port 8002): ✅ | **WorldPredict** (port 8011): ✅
 - **Douyin Game Forge** (port 8010): Claude Code fallback bug; 项目目录已移除
+
+## Polymarket Elon 市场分析 (2026-04-18)
+- **覆盖校正**: 1.909x (xtracker Apr16-18=42 vs BrowserRelay=22)
+- **真实日均**: ~57条/天
+- **Apr14-21** (目标190): 55条确认，P=96%，边缘+39%，Kelly¼=20% → **强买入信号**
+- **Apr17-24** (目标200): 55条确认(部分重叠)，P≈100%，边缘+50% → **强买入信号**
+- **May2026** (目标800): P≈100% → **强买入信号**
+- **采集方式**: Node.js CLI + `openclaw.mjs browser evaluate` → Chrome Browser Relay Tab
 
 ## 服务状态 (2026-04-18)
 - 8002/8003/8011: 05:40 批量重启恢复（上次崩溃 ~06:54 yesterday）

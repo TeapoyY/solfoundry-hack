@@ -1,0 +1,1 @@
+from pathlib import Path; import json; print(1)

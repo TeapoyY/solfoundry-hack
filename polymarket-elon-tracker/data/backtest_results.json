@@ -1,0 +1,35 @@
+{
+  "test1_twitter": {
+    "total_return": -0.051831222905924915,
+    "sharpe_ratio": -1.5681092095311169,
+    "max_drawdown": -0.09624150701787132,
+    "win_rate": 0.2,
+    "profit_factor": 0.5269299822326806,
+    "final_equity": 9481.68777094075,
+    "total_trades": 10,
+    "winning_trades": 2,
+    "losing_trades": 8
+  },
+  "test2_tesla": {
+    "total_return": -0.057087008440520184,
+    "sharpe_ratio": -1.8488254088860174,
+    "max_drawdown": -0.08991210296457951,
+    "win_rate": 0.25,
+    "profit_factor": 0.5272672770760587,
+    "final_equity": 9429.129915594798,
+    "total_trades": 12,
+    "winning_trades": 3,
+    "losing_trades": 9
+  },
+  "test3_doge": {
+    "total_return": -0.05376512271545762,
+    "sharpe_ratio": -1.4352202216979029,
+    "max_drawdown": -0.11475302360415952,
+    "win_rate": 0.25,
+    "profit_factor": 0.6424935373770725,
+    "final_equity": 9462.348772845424,
+    "total_trades": 16,
+    "winning_trades": 4,
+    "losing_trades": 12
+  }
+}

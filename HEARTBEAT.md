@@ -1,5 +1,47 @@
 ﻿# HEARTBEAT.md - Active Tasks Monitor
-Updated: 2026-04-17 21:23 HKT
+Updated: 2026-04-18 17:30 HKT
+
+## Polymarket Elon Tracker (xTracker Clone) - Updated 2026-04-18 17:30 HKT
+- **Repo**: `polymarket-elon-tracker/` (独立实时追踪器)
+- **架构**:
+  - `simple_collect.py` — Tweet采集 via Node.js + openclaw CLI (`node .../openclaw.mjs browser evaluate`)
+  - `beval_collect.py` — 备用采集方案（通过PowerShell）
+  - `src/database.py` — SQLite持久化
+  - `src/analyzer.py` — 3情景MC + Kelly
+  - `quick_check.py` — 快速分析入口 (用 `python quick_check.py` 在tracker目录)
+- **Browser Relay**: Chrome tab `B8795CA0F4574E46F3E6F21B1D5F8F4E` at x.com/home
+- **DB**: `data/tracker.db` (69 tweets)
+- **当前状态**: 81 tweets collected this run, 69 unique total. Elon's last post Apr17 22:42 GMT — no new Elon posts detected.
+- **Tracker状态**: Working, but tweets from general home feed (not Elon-specific filter)
+- **Analyzer**: ✅ Works (P=96-100%, Kelly=23-25%)
+- **覆盖校正**: 1.909x (xtracker Apr16-18=42 / BrowserRelay=22)
+- **真实日均**: ~57 tweets/day
+
+### 每小时采集 (HEARTBEAT任务)
+1. `simple_collect.py` — 通过Node.js CLI执行browser evaluate，8次滚动采集
+   - `python simple_collect.py 8` 在tracker目录
+2. 结果存: `data/tweets_latest.json` + `output/latest_snapshot.json`
+3. 边缘>15%时发送飞书警报
+
+### 市场信号
+| 市场 | 目标 | xtracker | 价格 | P(YES) | 边缘 | Kelly¼ |
+|------|------|----------|------|--------|------|--------|
+| Apr14-21 | 190 | 116 | 57% | ~96% | +39% | 20% |
+| Apr17-24 | 200 | 7 | 50% | ~100% | +50% | 25% |
+| May2026 | 800 | 0 | 50% | ~100% | +50% | 25% |
+
+### 采集命令
+```bash
+python "C:\Users\Administrator\.openclaw\workspace\polymarket-elon-tracker\simple_collect.py" 8
+```
+Node路径: `C:\Program Files\nodejs\node.exe`
+
+### Lucky Defense Game
+- **Path**: `lucky-defense/` (standalone)
+- **Type**: Single-file HTML5 tower defense + merge game
+- **Status**: APK built (v3, 3.9MB)
+- **Features**: 5 lanes, 6 defender types, 5 tiers auto-merge, 10 rounds
+- **Mobile**: Capacitor Android APK, full-screen, touch optimized
 
 ## Active Projects
 
@@ -7,7 +49,7 @@ Updated: 2026-04-17 21:23 HKT
 - **Repo**: https://github.com/TeapoyY/ai-form-filler
 - **Stack**: FastAPI + PyMuPDF + PaddleOCR + Ollama (gemma3:1b + minicpm-v)
 - **Status**: 鉁?2-step E2E working; Vision endpoint intermittent
-- **Backend**: port 8001 (via `python start_ff.py`)
+- **Backend**: port 8001 ✅ (was DOWN, now UP)
 - **OCR**: PyMuPDF text 鉁?| PaddleOCR 3.4.0 + paddlepaddle 3.0.0 鉁?(~37s cold-start) | DeepSeek OCR 0.3.0 (needs DS_OCR_API_KEY) | EasyOCR disabled
 - **LLM**: Ollama gemma3:1b (text) + minicpm-v (vision) 鈥?direct localhost, no proxy
 - **E2E**: 12/12 EN10204 鉁?(2-step: OCR ~3s + extract ~10s)
@@ -45,8 +87,21 @@ Updated: 2026-04-17 21:23 HKT
 3. Claude Code: `claude --print "implement..."`
 4. PR verification: `gh pr list --author TeapoyY`
 
-### Active PRs (verified 2026-04-16 21:02 HKT)
-鈿狅笍 No open PRs 鈥?need new bounty targets!
+### Active PRs (verified 2026-04-18 17:25 HKT)
+- **#887** OPEN: `feat(frontend): live countdown timer + search bar` (TeapoyY)
+  - Combined T1 bounty: countdown timer #826 + search bar #823 + mobile polish #824
+  - Label: `missing-wallet`
+- **#875** OPEN: `[Bounty] T1: Fix GitHub OAuth Sign-In Flow` (TeapoyY)
+  - CodeRabbit review: docstring coverage warning (50% < 80% threshold)
+  - Needs docstrings to pass pre-merge
+
+### SolFoundry Bounty Status (2026-04-18 17:25 HKT)
+- **#831** OPEN: `🏭 Bounty T1: Animated GIF of Bounty Creation Flow`
+  - PR #1032 (lui62233) — closed, submitted GIF (603KB, 10-frame)
+  - PR #1039 (denishpt) — closed, submitted GIF
+  - Both closed, issue still open — may need re-submission
+- **#834** OPEN: Same title as #831, opened Apr 8 — possible duplicate
+- Bounty board: https://www.algora.io/bounties?org=SolFoundry
 
 ## Cron Jobs
 | Job | Schedule | Status |
@@ -104,10 +159,10 @@ Updated: 2026-04-17 21:23 HKT
 ## Service Ports
 | Port | Service | Status |
 |------|---------|--------|
-| 8001 | FormForge backend | 鉁?|
-| 8002 | AI News backend | 鉁?(restarted 11:30) |
-| 8003 | LearnAny backend | 鉁?(restarted 15:08 - crashing ~hourly) |
-| 8010 | Douyin Game Forge backend | 鉁?|
-| 8011 | WorldPredict backend | 鉁?(restarted 12:44) |
-| 3000 | Douyin Game Forge frontend | 鉁?(only IPv6 localhost) |
+| 8001 | FormForge backend | ✅ Listen (PID 2208, confirmed 09:36) |
+| 8002 | AI News backend | ✅ Listen (PID 6768, confirmed 11:55) |
+| 8003 | LearnAny backend | ✅ Listen (PID 10800, confirmed 11:55) |
+| 8010 | Douyin Game Forge backend | ❌ Project dir removed from workspace |
+| 8011 | WorldPredict backend | ✅ Listen (PID 24088, confirmed 11:55) |
+| 3000 | Douyin Game Forge frontend | ❌ Project removed |
 | 3002/3004 | AI News/WorldPredict frontend | 鉁?|

@@ -1,0 +1,25 @@
+{
+  "strategy": "RSI High-Frequency",
+  "test1_twitter": {
+    "total_return": -0.08590966712863483,
+    "sharpe_ratio": -2.075141394521122,
+    "max_drawdown": -0.13204655372713348,
+    "win_rate": 0.21428571428571427,
+    "profit_factor": 0.45983525018612126,
+    "final_equity": 9140.903328713652,
+    "total_trades": 14.0,
+    "winning_trades": 3.0,
+    "losing_trades": 11.0
+  },
+  "test2_doge": {
+    "total_return": -0.09527068356487853,
+    "sharpe_ratio": -1.7541659747447071,
+    "max_drawdown": -0.15973635808649564,
+    "win_rate": 0.2631578947368421,
+    "profit_factor": 0.7340398221200307,
+    "final_equity": 9047.293164351215,
+    "total_trades": 38.0,
+    "winning_trades": 10.0,
+    "losing_trades": 28.0
+  }
+}
