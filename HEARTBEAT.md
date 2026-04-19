@@ -201,3 +201,10 @@ python "C:\Users\Administrator\.openclaw\workspace\polymarket-elon-tracker\fetch
 | 8011 | WorldPredict backend | ✅ Listen (PID 24088, confirmed 11:55) |
 | 3000 | Douyin Game Forge frontend | ❌ Project removed |
 | 3002/3004 | AI News/WorldPredict frontend | 鉁?|
+
+## BountyHub Skill (Added 2026-04-19)
+- Skill: ounty-hunt/ at ~/.openclaw/skills/bounty-hunt/
+- Cron: ounty-hub-hunter every 2h
+- Script: scripts/bounty_hunter.py
+- fetches from bountyhub.dev via browser relay
+- Claude Code implements + review loop -> PR
