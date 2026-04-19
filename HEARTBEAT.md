@@ -1,40 +1,75 @@
 ﻿# HEARTBEAT.md - Active Tasks Monitor
 Updated: 2026-04-18 17:30 HKT
 
-## Polymarket Elon Tracker (xTracker Clone) - Updated 2026-04-18 17:30 HKT
-- **Repo**: `polymarket-elon-tracker/` (独立实时追踪器)
-- **架构**:
-  - `simple_collect.py` — Tweet采集 via Node.js + openclaw CLI (`node .../openclaw.mjs browser evaluate`)
-  - `beval_collect.py` — 备用采集方案（通过PowerShell）
-  - `src/database.py` — SQLite持久化
-  - `src/analyzer.py` — 3情景MC + Kelly
-  - `quick_check.py` — 快速分析入口 (用 `python quick_check.py` 在tracker目录)
-- **Browser Relay**: Chrome tab `B8795CA0F4574E46F3E6F21B1D5F8F4E` at x.com/home
-- **DB**: `data/tracker.db` (69 tweets)
-- **当前状态**: 81 tweets collected this run, 69 unique total. Elon's last post Apr17 22:42 GMT — no new Elon posts detected.
-- **Tracker状态**: Working, but tweets from general home feed (not Elon-specific filter)
-- **Analyzer**: ✅ Works (P=96-100%, Kelly=23-25%)
-- **覆盖校正**: 1.909x (xtracker Apr16-18=42 / BrowserRelay=22)
-- **真实日均**: ~57 tweets/day
+## Polymarket Elon Tracker (xTracker Clone) - Updated 2026-04-19 11:50 HKT
+- **Repo**: `polymarket-elon-tracker/`
+- **架构** (v2 — multi-outcome):
+  - `src/full_analyzer.py` — v2引擎: 多桶概率 + 双向边缘 + bucket溢出处理
+  - `quick_check.py` — 入口: (1)fetch_live_counts.py抓xtrack (2)分析 (3)保存
+  - `fetch_live_counts.py` — 从Polymarket页面抓TWEET COUNT（via browser relay）
+  - `simple_collect.py` — Tweet采集（独立，不在 hourly check流程中）
+- **Data source**: xtrack (via Polymarket TWEET COUNT) — **xtrack.polymarket.com被封锁，用Polymarket页面替代**
+- **Daily rate**: ~30 tweets/day (Polymarket Apr校准)
+- **关键逻辑**: confirmed > bucket上限 → P=0；bucket概率用remaining正态分布计算
 
-### 每小时采集 (HEARTBEAT任务)
-1. `simple_collect.py` — 通过Node.js CLI执行browser evaluate，8次滚动采集
-   - `python simple_collect.py 8` 在tracker目录
-2. 结果存: `data/tweets_latest.json` + `output/latest_snapshot.json`
-3. 边缘>15%时发送飞书警报
+### xtrack计数规则（市场结算规则）
+**xtrack统计的内容:**
+- ✅ Main feed posts (Elon自己发的推文)
+- ✅ Quote posts (带评论转发)
+- ✅ Reposts / Retweets
+- ⚠️ Replies on main feed (standalone replies like https://x.com/elonmusk/status/1786073478711353576 — 这些算)
+- ❌ Replies to other tweets (纯回复不算)
+- ❌ Community reposts (不显示在x.com/home，不算)
+- ✅ Deleted posts (只要被tracker抓到超过~5分钟就算)
 
-### 市场信号
-| 市场 | 目标 | xtracker | 价格 | P(YES) | 边缘 | Kelly¼ |
-|------|------|----------|------|--------|------|--------|
-| Apr14-21 | 190 | 116 | 57% | ~96% | +39% | 20% |
-| Apr17-24 | 200 | 7 | 50% | ~100% | +50% | 25% |
-| May2026 | 800 | 0 | 50% | ~100% | +50% | 25% |
+**xtrack数据源**: https://xtrack.polymarket.com (本机封锁) → 用Polymarket market页面的TWEET COUNT字段作为代理
 
-### 采集命令
+### 每小时检查流程 (HEARTBEAT任务) — UPDATED v2
+**Cron Job**: `f5c6ff90-7ef1-40f6-958e-3a4c1705c644` (every 1h, announce to Feishu)
+**Timeout**: 600s (10 min) | **Status**: enabled
+
+**自动化流程** (via isolated agent):
+1. `quick_check.py --no-fetch` → `src/full_analyzer.py` → `output/latest_full_analysis.json`
+   - multi-outcome bucket analysis (P for each range bucket)
+   - combo strategies (adjacent bucket combinations with edge)
+   - bidirectional edge analysis (YES + NO)
+2. `backtest.py` → daily rate calibration + backtest validation
+3. Formatted 4-section report → 飞书 (user:ou_f3e81aedea89d300caca6e83bb0edeca)
+
+**手动运行**: `openclaw cron run f5c6ff90-7ef1-40f6-958e-3a4c1705c644`
+**查看状态**: `openclaw cron list | Select-String polymarket`
+**查看历史**: `openclaw cron runs --id f5c6ff90-7ef1-40f6-958e-3a4c1705c644 --limit 3`
+
+**旧流程问题**: full_analyzer.py用的是硬编码xtrack数值(164/55/0)，不是实时数据
+
+### 当前市场信号 (2026-04-19 11:50 UTC) — xtrack权威数据
+| 市场 | xtrack确认 | 目标 | 剩余/天数 | 所需速率 | P(YES) | PM价格 | 边缘 | Kelly¼ | 判决 |
+|------|-----------|------|---------|---------|--------|--------|------|--------|------|
+| apr14-21 | 164 | 190 | 26/2.8d | 9.1/day | 100% | YES@88% | **+12%** | 25% | **BUY YES** |
+| apr17-24 | 55 | 200 | 145/5.8d | 24.8/day | 99% | YES@79% | **+20%** | 24% | **BUY YES** |
+| may2026 | 0 | 800 | 800/31d | 25.8/day | 100% | YES@37% | **+63%** | 25% | **BUY YES** |
+
+### Bucket分析亮点
+- **apr14-21**: 240-259桶 → 我们P=72% vs PM价格27% → Edge+45%（但胜率已向YES集中）
+- **apr17-24**: 220-239桶 → 我们P=55% vs PM价格10% → Edge+45%
+- **may2026**: 900-999桶 → 我们P=83% vs PM价格10% → Edge+73%
+
+### 关键文件
 ```bash
-python "C:\Users\Administrator\.openclaw\workspace\polymarket-elon-tracker\simple_collect.py" 8
+# 完整小时检查（自动）
+python "C:\Users\Administrator\.openclaw\workspace\polymarket-elon-tracker\quick_check.py"
+
+# 仅分析（使用缓存的live_xtrack.json）
+python "C:\Users\Administrator\.openclaw\workspace\polymarket-elon-tracker\quick_check.py" --no-fetch
+
+# 手动抓xtrack数据
+python "C:\Users\Administrator\.openclaw\workspace\polymarket-elon-tracker\fetch_live_counts.py"
 ```
-Node路径: `C:\Program Files\nodejs\node.exe`
+
+### ⚠️ 已知问题
+- xtrack.polymarket.com 被封锁 — 用Polymarket market页面TWEET COUNT作为替代数据源
+- 我们的collector只抓到97条 vs xtrack的164条 — 原因: x.com/home有scroll gap + 网络延迟
+- May 2026 YES@37% 看起来是极大低估（MC P=83%，但市场对forecast有折扣）
 
 ### Lucky Defense Game
 - **Path**: `lucky-defense/` (standalone)
