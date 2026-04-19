@@ -84,6 +84,20 @@ def bnav(url):
 def bscroll():
     beval("window.scrollTo(0,document.body.scrollHeight)", timeout_ms=5000)
 
+def bscroll_to_top():
+    beval("window.scrollTo(0,0)", timeout_ms=5000)
+
+# JS to click the Posts tab on x.com/elonmusk profile page
+CLICK_POSTS_TAB_JS = r"""(function(){
+var tabs=document.querySelectorAll('[role=tab],a[role=tab]');
+for(var i=0;i<tabs.length;i++){
+if(tabs[i].innerText && tabs[i].innerText.trim()==='Posts'){
+tabs[i].click();return 'clicked';
+}
+}
+return 'not found';
+})()"""
+
 
 EXTRACT_JS = r"""(function(){
 var r=[];
@@ -152,10 +166,34 @@ def parse_tweet(raw, ref):
     }
 
 
-def collect(n_scrolls=8):
-    print("Navigating to x.com/home...")
-    bnav("https://x.com/home")
+def collect(n_scrolls=20, target_url=None):
+    """
+    Collect tweets from x.com/elonmusk profile page.
+    
+    KEY FIX: Changed from x.com/home to x.com/elonmusk.
+    - x.com/home uses algorithmic ranking that misses ~50% of tweets
+    - x.com/elonmusk shows ALL tweets from the profile including retweets
+    
+    Args:
+        n_scrolls: Number of scroll cycles (default: 20, up from 8)
+        target_url: Optional URL to navigate to (for testing other profiles)
+    """
+    url = target_url or "https://x.com/elonmusk"
+    print(f"Navigating to {url} (profile page)...")
+    bnav(url)
     time.sleep(3)
+
+    # If on profile page, click Posts tab to ensure we're on the posts feed
+    # (not replies, subs, highlights, or media)
+    if "elonmusk" in url or "profile" in url:
+        print("Clicking Posts tab...")
+        r = beval(CLICK_POSTS_TAB_JS, timeout_ms=10000)
+        print(f"  Tab click result: {r}")
+        time.sleep(2)
+
+    # Scroll to top to start from newest tweets
+    bscroll_to_top()
+    time.sleep(1)
 
     all_tweets = []
     seen = set()
@@ -231,7 +269,7 @@ def store_and_analyze(tweets):
 
 
 if __name__ == "__main__":
-    n = int(sys.argv[1]) if len(sys.argv) > 1 else 8
+    n = int(sys.argv[1]) if len(sys.argv) > 1 else 20  # Increased from 8 to 20
     print(f"Collecting {n} scrolls via Node.js + openclaw CLI...")
     tweets = collect(n_scrolls=n)
     print(f"Collected: {len(tweets)} tweets")

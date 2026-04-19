@@ -37,8 +37,8 @@ MARKETS = [
         "target": 190,
         "ws": "2026-04-14T00:00:00Z",
         "we": "2026-04-21T23:59:59Z",
-        # Live from Polymarket (2026-04-19 ~11:00 HKT)
-        "xtrack_confirmed": 184,      # UPDATED 2026-04-19 15:36 HKT
+        # UPDATED from Polymarket TWEET COUNT (2026-04-19 16:20 HKT via browser relay)
+        "xtrack_confirmed": 167,
         "pm_yes_price": 0.88,
         "pm_no_price": 0.12,
         "pm_vol": 6589397,
