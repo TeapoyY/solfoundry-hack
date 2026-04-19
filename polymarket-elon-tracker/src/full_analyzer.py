@@ -435,6 +435,25 @@ def analyze_market(mkt: dict, now_utc: datetime) -> dict:
         best_side = None
         best_kelly = 0.0
 
+    # ── Hourly countdown analysis ──────────────────────────────────
+    hours_rem = days_rem * 24.0
+    tweets_per_hour_needed = round(remaining / hours_rem, 2) if hours_rem > 0 else 999
+    tweets_per_hour_real = round(DAILY_RATE / 24.0, 2)  # ~1.25/hour
+
+    # Elon's peak posting hours (UTC): ~22:00-01:00 (late night US) and 07:00-08:00 (morning US)
+    PEAK_HOURS = {22, 23, 0, 1, 7, 8}
+    current_hour = now_utc.hour
+    in_peak = current_hour in PEAK_HOURS
+    peak_rate_multiplier = 2.5 if in_peak else 1.0
+    tweets_per_hour_peak = round(tweets_per_hour_real * peak_rate_multiplier, 2)
+
+    # Next peak window
+    next_peak = None
+    for h in range(current_hour + 1, current_hour + 12):
+        if (h % 24) in PEAK_HOURS:
+            next_peak = h % 24
+            break
+
     # ── Velocity from our collected tweets ──────────────────────────
     tweets = load_tweets()
     velocity = {}
@@ -452,11 +471,20 @@ def analyze_market(mkt: dict, now_utc: datetime) -> dict:
         "target": target,
         "window": f"{ws[:10]} ~ {we[:10]}",
         "confirmed": confirmed,
+        "hours_remaining": round(hours_rem, 1),
         "days_remaining": round(days_rem, 2),
         "remaining_to_target": remaining,
         "required_rate": req_rate,
         "real_rate": DAILY_RATE,
         "velocity_ratio": vel_ratio,
+        # Hourly countdown
+        "tweets_needed_per_hour": tweets_per_hour_needed,
+        "tweets_per_hour_real_base": tweets_per_hour_real,
+        "tweets_per_hour_peak_adjusted": tweets_per_hour_peak,
+        "in_peak_window": in_peak,
+        "current_hour_utc": current_hour,
+        "next_peak_hour_utc": next_peak,
+        "peak_hours_utc": sorted(list(PEAK_HOURS)),
         # YES/NO binary
         "yes_price": yes_price,
         "no_price": no_price,
