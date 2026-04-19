@@ -152,6 +152,12 @@ def load_tweets() -> list:
 
 
 def kelly(entry: float, prob: float) -> float:
+
+
+def norm_cdf(x, mu, sigma):
+    """Standard normal CDF."""
+    z = (x - mu) / (sigma * math.sqrt(2))
+    return 0.5 * (1 + erf(max(-10.0, min(10.0, z))))
     """Kelly criterion. entry = decimal odds implied price paid."""
     if entry <= 0 or entry >= 1 or prob <= 0:
         return 0.0
@@ -252,10 +258,10 @@ def bucket_probability(bucket_lo: int, bucket_hi: int, confirmed: int, days: flo
         return max(0.0, min(1.0, p))
 
     # For bucket that contains confirmed (rem_lo <= 0 <= rem_hi):
-    # This means: final count stays within [bucket_lo, bucket_hi] = confirmed + remaining in [rem_lo, rem_hi]
-    # rem_lo <= 0 means we need remaining tweets to NOT exceed |rem_lo| to stay below bucket_lo
+    # confirmed is between bucket_lo and bucket_hi.
+    # "In bucket" means remaining tweets DON'T push final count above bucket_hi.
     # P(R <= rem_hi) where R >= 0
-    # = P(0 <= R <= rem_hi) = norm_cdf(rem_hi+0.5) - norm_cdf(0)
+    # = P(0 <= R <= rem_hi) = norm_cdf(rem_hi) - norm_cdf(0)
     p_above_bucket_lo = norm_cdf(rem_hi + 0.5, expected_rem, std_rem) - norm_cdf(0, expected_rem, std_rem)
     return max(0.0, min(1.0, p_above_bucket_lo))
 
@@ -405,9 +411,19 @@ def analyze_market(mkt: dict, now_utc: datetime) -> dict:
     combos.sort(key=lambda x: x["combo_edge"], reverse=True)
 
     # ── YES/NO binary probability ─────────────────────────────────────
-    # P(YES) = P(final count >= target) = sum of all buckets where lo >= target
-    # P(NO) = 1 - P(YES)
-    p_yes = sum(b["prob"] for b in bucket_probs if b["lo"] >= target)
+    # P(YES) = P(final count >= target) = P(remaining >= target - confirmed)
+    # This is a simple tail probability of the remaining tweets distribution.
+    # Buckets where lo >= target: P(YES) = P(stay in bucket) [already computed]
+    # Buckets where hi < target: P(YES) = P(reach lower bound of this bucket) = P(R >= lo - confirmed)
+    remaining_to_target = target - confirmed
+    if remaining_to_target <= 0:
+        p_yes = 1.0  # already at or above target
+    else:
+        # P(remaining >= remaining_to_target) = tail probability
+        expected_rem = DAILY_RATE * days_rem
+        std_rem = max(math.sqrt(expected_rem), 1.0)
+        # P(R >= remaining_to_target) = 1 - CDF(remaining_to_target - 1)
+        p_yes = 1.0 - norm_cdf(remaining_to_target - 0.5, expected_rem, std_rem)
     p_no = 1.0 - p_yes
 
     # Recalculate MC reach based on buckets
