@@ -471,6 +471,7 @@ def analyze_market(mkt: dict, now_utc: datetime) -> dict:
         "target": target,
         "window": f"{ws[:10]} ~ {we[:10]}",
         "confirmed": confirmed,
+        "xtrack_confirmed": confirmed,
         "hours_remaining": round(hours_rem, 1),
         "days_remaining": round(days_rem, 2),
         "remaining_to_target": remaining,
