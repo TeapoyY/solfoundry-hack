@@ -13,7 +13,7 @@ from pathlib import Path
 TRACKER_DIR = Path(r"C:\Users\Administrator\.openclaw\workspace\polymarket-elon-tracker")
 sys.path.insert(0, str(TRACKER_DIR / "src"))
 
-from full_analyzer import analyze_market, MARKETS, load_live_xtrack, mc_final_count, DAILY_RATE
+from full_analyzer import analyze_market, MARKETS, load_live_xtrack, mc_final_count, DAILY_RATE, PEAK_HOURS
 
 PY = r"C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe"
 

@@ -24,6 +24,7 @@ from typing import Optional, List, Dict, Any
 # Realistic daily rate calibrated from Polymarket Apr data:
 # apr14-21: 164 tweets in 5.4 days = ~30.4/day
 DAILY_RATE = 30.0  # tweets/day
+PEAK_HOURS = {22, 23, 0, 1, 7, 8}  # UTC hours when Elon posts most
 
 # ── Market Definitions ─────────────────────────────────────────────
 # xtrack.polymarket.com is BLOCKED from this machine.
@@ -441,7 +442,7 @@ def analyze_market(mkt: dict, now_utc: datetime) -> dict:
     tweets_per_hour_real = round(DAILY_RATE / 24.0, 2)  # ~1.25/hour
 
     # Elon's peak posting hours (UTC): ~22:00-01:00 (late night US) and 07:00-08:00 (morning US)
-    PEAK_HOURS = {22, 23, 0, 1, 7, 8}
+    # (defined at module level as PEAK_HOURS)
     current_hour = now_utc.hour
     in_peak = current_hour in PEAK_HOURS
     peak_rate_multiplier = 2.5 if in_peak else 1.0
