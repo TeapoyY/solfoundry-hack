@@ -15,6 +15,7 @@ Usage:
 """
 import json
 import math
+from math import erf
 import random
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -121,6 +122,50 @@ def load_live_xtrack() -> dict:
     return {}
 
 
+
+def load_xtrack_snapshot() -> dict:
+    """Load previous xtrack count snapshot for change detection."""
+    snap_path = DATA_DIR / 'xtrack_snapshot.json'
+    if snap_path.exists() and snap_path.stat().st_size > 0:
+        try:
+            return json.loads(snap_path.read_text('utf-8'))
+        except Exception:
+            pass
+    return {'counts': {}, 'ts': None}
+
+
+def save_xtrack_snapshot(now_utc: datetime):
+    """Save current xtrack counts as snapshot for next-run comparison."""
+    counts = {}
+    for m in MARKETS:
+        counts[m['id']] = m.get('xtrack_confirmed', 0) or 0
+    snap = {
+        'counts': counts,
+        'ts': now_utc.isoformat(),
+    }
+    snap_path = DATA_DIR / 'xtrack_snapshot.json'
+    try:
+        snap_path.write_text(json.dumps(snap, ensure_ascii=False), encoding='utf-8')
+    except Exception:
+        pass
+
+
+def load_live_prices() -> dict:
+    """Load live Polymarket prices from fetch_live_prices.py output."""
+    prices_path = DATA_DIR / 'live_prices.json'
+    if prices_path.exists() and prices_path.stat().st_size > 0:
+        try:
+            data = json.loads(prices_path.read_text('utf-8'))
+            result = {}
+            for k, v in data.items():
+                if isinstance(v, dict) and v.get('yes') is not None:
+                    result[k] = {'yes': v['yes'], 'no': v.get('no')}
+            return result
+        except Exception:
+            pass
+    return {}
+
+
 def get_market_confirmed(mkt: dict) -> int:
     """Get confirmed count: live from Polymarket > hardcoded fallback."""
     live = load_live_xtrack()
@@ -152,12 +197,6 @@ def load_tweets() -> list:
 
 
 def kelly(entry: float, prob: float) -> float:
-
-
-def norm_cdf(x, mu, sigma):
-    """Standard normal CDF."""
-    z = (x - mu) / (sigma * math.sqrt(2))
-    return 0.5 * (1 + erf(max(-10.0, min(10.0, z))))
     """Kelly criterion. entry = decimal odds implied price paid."""
     if entry <= 0 or entry >= 1 or prob <= 0:
         return 0.0
@@ -167,6 +206,12 @@ def norm_cdf(x, mu, sigma):
         return 0.0
     f = (b * prob - q) / b
     return max(0.0, f)
+
+
+def norm_cdf(x, mu, sigma):
+    """Standard normal CDF."""
+    z = (x - mu) / (sigma * math.sqrt(2))
+    return 0.5 * (1 + erf(max(-10.0, min(10.0, z))))
 
 
 def mc_final_count(current: int, days: float, n_sims: int = 30000) -> Dict[str, Any]:

@@ -1,186 +1,154 @@
 """
-Hourly Analysis Runner for Polymarket Elon Tracker
+Hourly Analysis Runner — Polymarket Elon Tracker v3
 ===================================================
-Designed to run reliably from cron (no browser relay dependency).
-Uses hardcoded Polymarket prices/buckets + our tweet data for pattern analysis.
-Saves report to output/ and prints a ready-to-copy Feishu message.
+v3 improvements:
+- Live Polymarket prices fetched via browser relay
+- xtrack count change detection with Feishu alerts
+- Multi-bucket combo display (top 5 signals per market)
+- All prices/edge/Kelly shown for YES and NO sides
 """
 import json
+import subprocess
 import sys
+import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 TRACKER_DIR = Path(r"C:\Users\Administrator\.openclaw\workspace\polymarket-elon-tracker")
+PY = r"C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe"
 sys.path.insert(0, str(TRACKER_DIR / "src"))
 
-from full_analyzer import analyze_market, MARKETS, load_live_xtrack, mc_final_count, DAILY_RATE, PEAK_HOURS
+from full_analyzer import (
+    analyze_market, MARKETS, load_live_xtrack,
+    load_live_prices, load_xtrack_snapshot,
+    mc_final_count, DAILY_RATE, PEAK_HOURS, save_xtrack_snapshot
+)
 
-PY = r"C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe"
-
-
-def get_current_utc_hour():
-    return datetime.now(timezone.utc).hour
-
-
-def hourly_pattern_analysis(tweets: list, now_utc: datetime) -> dict:
+# ── xtrack change detection ──────────────────────────────────────────────────
+def check_xtrack_changes(now_utc: datetime) -> list:
     """
-    Analyze tweet patterns by hour of day.
-    Returns per-hour rates and identifies peak/slow windows.
+    Compare current xtrack_confirmed with previous snapshot.
+    Returns list of alert dicts for markets where count changed.
     """
-    from collections import Counter
-    from datetime import timedelta
+    alerts = []
+    snapshot = load_xtrack_snapshot()
+    prev_counts = snapshot.get("counts", {})
 
-    if not tweets:
-        return {}
+    for m in MARKETS:
+        cid = m["id"]
+        current = m.get("xtrack_confirmed", 0) or 0
+        prev = prev_counts.get(cid, None)
 
-    hour_counts = Counter()
-    for t in tweets:
-        ts_str = t.get("timestamp", "")
-        if ts_str:
-            try:
-                from datetime import datetime as dt
-                ts = dt.fromisoformat(ts_str.replace("Z", "+00:00"))
-                hour_counts[ts.hour] += 1
-            except Exception:
-                pass
+        if prev is not None and current != prev:
+            delta = current - prev
+            direction = "↑" if delta > 0 else "↓"
+            alerts.append({
+                "market_id": cid,
+                "previous": prev,
+                "current": current,
+                "delta": delta,
+                "direction": direction,
+                "msg": f"⚡ xtrack {cid}: {prev} → {current} ({direction}{abs(delta)})"
+            })
+            print(f"  [!] xtrack CHANGED: {cid}: {prev} → {current} ({direction}{abs(delta)})")
 
-    total = len(tweets)
-    hourly_rates = {}
-    for h in range(24):
-        cnt = hour_counts.get(h, 0)
-        hourly_rates[h] = {
-            "count": cnt,
-            "pct": round(cnt / total * 100, 1) if total > 0 else 0,
-            "tweets_per_hour_if_constant": round(cnt / max(total, 1) * 30, 1),
-        }
-
-    # Peak hours (top 6)
-    sorted_hours = sorted(hourly_rates.items(), key=lambda x: x[1]["count"], reverse=True)
-    peak_hours = [h for h, _ in sorted_hours[:6]]
-    quiet_hours = [h for h, _ in sorted_hours if hourly_rates[h]["pct"] < 3][:6]
-
-    # Current hour status
-    current_hour = now_utc.hour
-    current_rate = hourly_rates.get(current_hour, {}).get("pct", 0)
-    is_peak = current_hour in peak_hours[:3]
-
-    return {
-        "hourly_rates": hourly_rates,
-        "peak_hours_utc": sorted(peak_hours),
-        "quiet_hours_utc": sorted(quiet_hours),
-        "current_hour_utc": current_hour,
-        "current_hour_pct": current_rate,
-        "is_peak_window": is_peak,
-    }
+    return alerts
 
 
-def hourly_countdown(mkt: dict, now_utc: datetime) -> dict:
+def send_feishu_alert(alerts: list):
+    """Send xtrack change alerts to Feishu."""
+    if not alerts:
+        return
+    lines = ["⚡ **xtrack数量变动告警**\n"]
+    for a in alerts:
+        lines.append(f"{a['direction']} **{a['market_id'].upper()}**: {a['previous']} → {a['current']} ({a['direction']}{abs(a['delta'])})")
+
+    msg = "\n".join(lines)
+    try:
+        from importlib import import_module
+        # Use openclaw message tool via subprocess
+        msg_cmd = f'openclaw msg send --channel feishu --message {json.dumps(msg)}'
+        subprocess.run(msg_cmd, shell=True, capture_output=True, timeout=10)
+    except Exception as e:
+        print(f"Feishu alert failed: {e}")
+
+
+# ── Fetch live prices via browser ───────────────────────────────────────────
+def fetch_live_prices_now() -> dict:
     """
-    Compute countdown in HOURS not days, with hourly velocity analysis.
+    Run fetch_live_prices.py to get real-time Polymarket YES/NO prices.
+    Returns dict like {"apr14-21": {"yes": 0.87, "no": 0.13}, ...}
     """
-    from full_analyzer import parse_ts, load_tweets
-
-    ws = mkt["ws"]
-    we = mkt["we"]
-    target = mkt["target"]
-    confirmed = mkt.get("xtrack_confirmed", 0) or 0
-
-    we_dt = parse_ts(we)
-    if not we_dt:
-        return {}
-
-    # Hours remaining (precise)
-    hours_rem = max((we_dt - now_utc).total_seconds() / 3600.0, 0)
-
-    # tweets needed per hour (not per day)
-    tweets_per_hour_needed = round((target - confirmed) / hours_rem, 2) if hours_rem > 0 else 999
-
-    # Daily rate converted to hourly
-    tweets_per_hour_real = round(DAILY_RATE / 24, 2)  # ~1.25/hour
-
-    # Peak-hour adjusted rate (if we're in a peak window)
-    # Elon's peak hours are ~22:00-01:00 UTC (10pm-1am) and ~07:00-08:00 UTC
-    # In peak hours, rate is ~3x the hourly average
-    peak_hours = [22, 23, 0, 1, 7, 8]
-    current_hour = now_utc.hour
-    in_peak = current_hour in peak_hours
-    peak_rate = round(tweets_per_hour_real * 2.5, 2) if in_peak else tweets_per_hour_real
-
-    # Next peak window
-    next_peak = None
-    for h in range(current_hour + 1, current_hour + 12):
-        if h % 24 in peak_hours:
-            next_peak = h % 24
-            break
-
-    # Hourly probability using normal distribution
-    import math
-    expected_remaining = DAILY_RATE * (hours_rem / 24)
-    std_rem = max(math.sqrt(expected_remaining), 1.0)
-
-    # Use base rate MC
-    days_rem_h = hours_rem / 24
-    mc = mc_final_count(confirmed, days_rem_h)
-
-    return {
-        "hours_remaining": round(hours_rem, 1),
-        "tweets_needed_per_hour": tweets_per_hour_needed,
-        "tweets_per_hour_real_base": tweets_per_hour_real,
-        "tweets_per_hour_peak_adjusted": peak_rate,
-        "in_peak_window": in_peak,
-        "current_hour_utc": current_hour,
-        "next_peak_hour_utc": next_peak,
-        "hourly_velocity_ratio": round(peak_rate / tweets_per_hour_needed, 2) if tweets_per_hour_needed < 999 else 99,
-        "mc": mc,
-    }
+    print("Fetching live Polymarket prices...")
+    result = subprocess.run(
+        [PY, str(TRACKER_DIR / "fetch_live_prices.py")],
+        capture_output=True, text=True, timeout=120
+    )
+    # Load what was saved
+    prices_path = TRACKER_DIR / "data" / "live_prices.json"
+    if prices_path.exists():
+        try:
+            return json.loads(prices_path.read_text("utf-8"))
+        except:
+            pass
+    return {}
 
 
-def format_feishu_message(results: list, hourly_info: dict, tweets: list) -> str:
-    """Format the full analysis as a Feishu-ready message."""
+# ── Format Feishu message (v3: multi-bucket + live prices) ──────────────────
+def format_feishu_message_v3(results: list, hourly_info: dict, live_prices: dict,
+                               xtrack_alerts: list, tweets: list) -> str:
+    """Format the full analysis as a Feishu-ready message (v3)."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     current_hour = hourly_info.get("current_hour_utc", 0)
     peak = hourly_info.get("is_peak_window", False)
-
-    # Peak hours label
     peak_hrs = hourly_info.get("peak_hours_utc", [])
     peak_label = f"{peak_hrs[0]:02d}-{peak_hrs[-1]:02d}" if peak_hrs else "?"
 
-    msg = f"""🧠 POLYMARKET ELON TRACKER — HOURLY REPORT
-📅 {now} | Current UTC hour: {current_hour:02d}:00 ({'PEAK WINDOW' if peak else 'quiet'} ~{peak_label} UTC)
+    msg_parts = []
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # Header
+    msg_parts.append(
+        f"🧠 POLYMARKET ELON TRACKER — HOURLY REPORT\n"
+        f"📅 {now} | UTC {current_hour:02d}:00 ({'🌙 PEAK' if peak else '☀️ quiet'} ~{peak_label})\n"
+    )
 
-"""
+    # xtrack alerts
+    if xtrack_alerts:
+        alert_lines = ["⚡ **xtrack变动告警**"]
+        for a in xtrack_alerts:
+            alert_lines.append(
+                f"  {a['direction']} **{a['market_id'].upper()}**: {a['previous']} → {a['current']} ({a['direction']}{abs(a['delta'])})"
+            )
+        msg_parts.append("\n".join(alert_lines) + "\n")
+
+    msg_parts.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
 
     for r in results:
         mid = r["market_id"]
-        hrs = r.get("hours_remaining", {})
-        hl = r.get("hourly", {})
-
-        # Status line
-        remaining = r.get("remaining_to_target", 0)
-        target = r.get("target", 0)
         confirmed = r.get("xtrack_confirmed", 0)
-
-        # Hourly countdown
+        target = r.get("target", 0)
+        remaining = r.get("remaining_to_target", 0)
         h_rem = r.get("hours_remaining", 0)
         per_hour_needed = r.get("tweets_needed_per_hour", 999)
         per_hour_real = r.get("tweets_per_hour_real_base", 0)
         in_peak = r.get("in_peak_window", False)
         peak_rate = r.get("tweets_per_hour_peak_adjusted", 0)
 
-        # Best combo
         combos = r.get("combos", [])
-        top_combo = combos[0] if combos else None
-
-        # Verdict
         verdict = r.get("best_bet", "NO_EDGE")
-        edge_yes = r.get("edge_yes_pct", "N/A")
-        kelly_q = r.get("kelly_quarter_yes", 0)
         p_yes = r.get("p_yes", 0)
-        pm_yes = r.get("yes_price", 0)
+        p_no = r.get("p_no", 0)
+        yes_edge = r.get("edge_yes_pct", "N/A")
+        no_edge = r.get("edge_no_pct", "N/A")
+        kelly_yes = r.get("kelly_yes_quarter", 0)
+        kelly_no = r.get("kelly_no_quarter", 0)
 
-        # Emoji for verdict
+        # Live prices
+        live = live_prices.get(mid, {})
+        live_yes = live.get("yes")
+        live_no = live.get("no")
+
+        # Status emoji
         if verdict == "BUY_YES":
             emoji = "✅"
         elif verdict == "BUY_NO":
@@ -188,72 +156,145 @@ def format_feishu_message(results: list, hourly_info: dict, tweets: list) -> str
         else:
             emoji = "⚠️"
 
-        msg += f"""【{mid.upper()}】{emoji} {verdict}
-• xtrack: {confirmed}/{target} | 剩余: {remaining}帖
-• ⏱️ {h_rem:.1f}h left | 需要: {per_hour_needed:.1f}/h | 实际(基础): {per_hour_real:.2f}/h
-• {'🌙 PEAK时: ' + str(peak_rate) + '/h | IN PEAK WINDOW' if in_peak else '☀️ 非高峰时段'}
-• PM: {pm_yes:.0%} | 我们的P: {p_yes:.0%} | Edge: {edge_yes} | Kelly¼: {kelly_q*100:.0f}%
+        # Price line
+        if live_yes is not None:
+            price_str = f"YES={live_yes:.0%} NO={live_no:.0%}" if live_no else f"YES={live_yes:.0%}"
+            price_src = " [LIVE]"
+        else:
+            pm_yes = r.get("yes_price", 0)
+            price_str = f"YES={pm_yes:.0%}"
+            price_src = " [hardcoded]"
 
-"""
+        msg_parts.append(
+            f"【{mid.upper()}】{emoji} {verdict}{price_src}\n"
+            f"• xtrack: {confirmed}/{target} | 剩余: {remaining}帖\n"
+            f"• ⏱️ {h_rem:.1f}h | 需要: {per_hour_needed:.1f}/h | 实际: {per_hour_real:.2f}/h\n"
+            f"• {'🌙 PEAK时:' + str(peak_rate) + '/h [IN WINDOW]' if in_peak else '☀️ 非高峰'}\n"
+            f"• PM: {price_str} | 我们的P: YES={p_yes:.0%} NO={p_no:.0%}\n"
+        )
 
-        # Top combo
-        if top_combo and top_combo.get("combo_edge", 0) > 0.05:
-            c = top_combo
-            msg += f"""  🎯 Top Combo: {c['combo_label']}
-     概率{c['combo_prob_pct']} | 成本{c['combo_cost_pct']} | Edge {c['combo_edge_pct']} | Kelly¼ {c['kelly_quarter']*100:.0f}%
+        # Binary edge summary
+        msg_parts.append(
+            f"• Edge: YES {yes_edge} | NO {no_edge}\n"
+            f"• Kelly¼: YES={kelly_yes*100:.0f}% | NO={kelly_no*100:.0f}%"
+        )
 
-"""
+        # Multi-bucket combos (show top 5 by edge)
+        valid_combos = [c for c in combos if c.get("combo_edge", 0) > 0 and not c.get("is_full")]
+        valid_combos.sort(key=lambda x: x["combo_edge"], reverse=True)
+        top_combos = valid_combos[:5]
 
-        msg += """━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        if top_combos:
+            msg_parts.append("\n🎯 **Bucket信号 TOP5** (按Edge排序):")
+            for i, c in enumerate(top_combos, 1):
+                edge_val = c["combo_edge"] * 100
+                kelly_val = c["kelly_quarter"] * 100
+                cost_val = c["combo_cost"] * 100
+                action = c.get("action", "HOLD")
+                action_emoji = "🟢" if action == "BUY" else ("🔴" if action == "SELL" else "⚪")
+                msg_parts.append(
+                    f"{i}. [{action_emoji}{action}] {c['combo_label']}: "
+                    f"P={c['combo_prob_pct']} | Cost={cost_val:.0f}% | "
+                    f"Edge={edge_val:+.1f}% | Kelly¼={kelly_val:.0f}%"
+                )
 
-"""
+        msg_parts.append("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
 
     # Hourly pattern
-    peak_str = ",".join(f"{h:02d}:00" for h in peak_hrs[:4])
     quiet_hrs = hourly_info.get("quiet_hours_utc", [])
     quiet_str = ",".join(f"{h:02d}:00" for h in quiet_hrs[:3])
+    peak_str = ",".join(f"{h:02d}:00" for h in peak_hrs[:4])
 
-    msg += f"""📊 ELON发帖模式(UTC)
-🌙 高峰: {peak_str} UTC
-☀️ 低谷: {quiet_str} UTC (谨慎时段)
-📌 当前{hourly_info['current_hour_utc']:02d}:00 UTC — {'🌙 高峰期' if peak else '☀️ 低谷期'}
+    msg_parts.append(
+        f"📊 ELON发帖模式(UTC)\n"
+        f"🌙 高峰: {peak_str} UTC\n"
+        f"☀️ 低谷: {quiet_str} UTC\n"
+        f"📌 当前{current_hour:02d}:00 UTC — {'🌙 高峰' if peak else '☀️ 低谷'}\n\n"
+        f"📌 规则: 主贴+引用转发+转发=计入 | 纯回复不计入 | 社区转发不计入"
+    )
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📌 规则提醒: 主贴+引用转发+转发=计入 | 纯回复不计入 | 社区转发不计入
-🕐 xtrack权威: https://xtrack.polymarket.com
-"""
-
-    return msg
+    return "\n".join(msg_parts)
 
 
+# ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     now_utc = datetime.now(timezone.utc)
+    print(f"\n=== HOURLY REPORT {now_utc.isoformat()} ===")
+
+    # 1. Check xtrack changes BEFORE analysis (compare with previous snapshot)
+    print("\n[1/4] Checking xtrack changes...")
+    xtrack_alerts = check_xtrack_changes(now_utc)
+
+    # 2. Fetch live prices via browser relay
+    print("\n[2/4] Fetching live Polymarket prices...")
+    live_prices = fetch_live_prices_now()
+    if live_prices:
+        for mid, data in live_prices.items():
+            yes = data.get("yes")
+            print(f"  {mid}: YES={yes:.2f}" if yes else f"  {mid}: no price")
+    else:
+        print("  No live prices fetched (browser relay may be unavailable)")
+
+    # 3. Save current xtrack snapshot AFTER analysis (for next-run comparison)
+    print("\n[3/4] Running analysis...")
     tweets_path = TRACKER_DIR / "data" / "tweets_latest.json"
     tweets = []
     if tweets_path.exists():
         with open(tweets_path, encoding="utf-8") as f:
-            data = json.load(f)
-        tweets = data.get("tweets", [])
+            tweets = json.load(f).get("tweets", [])
 
-    # Hourly pattern from our collected tweets
-    hourly_info = hourly_pattern_analysis(tweets, now_utc)
+    # Hourly pattern
+    from collections import Counter
+    hourly_rates = {}
+    for t in tweets:
+        ts_str = t.get("timestamp", "")
+        if ts_str:
+            try:
+                ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                hourly_rates[ts.hour] = hourly_rates.get(ts.hour, 0) + 1
+            except:
+                pass
+    total = len(tweets) or 1
+    peak_hrs = sorted([h for h, c in hourly_rates.items() if c > 0], key=lambda h: -hourly_rates[h])[:6]
+    quiet_hrs = sorted([h for h in range(24) if h not in peak_hrs and hourly_rates.get(h, 0) == 0])[:6]
+    current_hour = now_utc.hour
+    hourly_info = {
+        "current_hour_utc": current_hour,
+        "is_peak_window": current_hour in PEAK_HOURS,
+        "peak_hours_utc": peak_hrs,
+        "quiet_hours_utc": quiet_hrs,
+    }
 
-    # Analyze each market with hourly countdown
+    # Analyze each market
     results = []
     for m in MARKETS:
+        # Override prices with live data if available
+        live = live_prices.get(m["id"], {})
+        if live.get("yes") is not None:
+            m = {**m, "pm_yes_price": live["yes"], "pm_no_price": live.get("no", 1 - live["yes"])}
+
         r = analyze_market(m, now_utc)
-        # Add hourly-specific fields
-        hl = hourly_countdown(m, now_utc)
+        hl = {
+            "hours_remaining": max((datetime.fromisoformat(m["we"].replace("Z", "+00:00")) - now_utc).total_seconds() / 3600, 0),
+            "tweets_needed_per_hour": round((r["target"] - r["xtrack_confirmed"]) / max((datetime.fromisoformat(m["we"].replace("Z", "+00:00")) - now_utc).total_seconds() / 3600, 0.1), 2),
+            "tweets_per_hour_real_base": round(DAILY_RATE / 24, 2),
+            "tweets_per_hour_peak_adjusted": round(DAILY_RATE / 24 * (2.5 if current_hour in PEAK_HOURS else 1.0), 2),
+            "in_peak_window": current_hour in PEAK_HOURS,
+        }
         r.update(hl)
         results.append(r)
 
-    # Save snapshot
+    # 4. Save snapshot AFTER analysis (for next-run change detection)
+    save_xtrack_snapshot(now_utc)
+
+    # Save output files
     out_dir = TRACKER_DIR / "output"
     out_dir.mkdir(exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     save = {
         "collected_at": now_utc.isoformat(),
+        "live_prices": live_prices,
+        "xtrack_alerts": xtrack_alerts,
         "hourly_pattern": hourly_info,
         "results": results,
         "total_tweets": len(tweets),
@@ -263,29 +304,33 @@ def main():
     fp.write_text(json.dumps(save, ensure_ascii=False, indent=2), encoding="utf-8")
     latest.write_text(json.dumps(save, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    # Format Feishu message
-    msg = format_feishu_message(results, hourly_info, tweets)
+    # Format message
+    msg = format_feishu_message_v3(results, hourly_info, live_prices, xtrack_alerts, tweets)
 
-    # Print ASCII-safe summary to console, save full message to file
-    print(f"Analysis complete. {len(results)} markets analyzed.")
-    print(f"Top signals:")
+    # Console summary (ASCII-safe)
+    print(f"\nAnalysis complete. {len(results)} markets.")
     for r in results:
         combos = r.get("combos", [])
-        top = combos[0] if combos else None
-        if top:
-            print(f"  {r['market_id']}: {top['combo_label']} | P={top['combo_prob_pct']} | Edge={top['combo_edge_pct']} | Kelly={top['kelly_quarter']*100:.0f}%")
+        top3 = [c for c in combos if c.get("combo_edge", 0) > 0 and not c.get("is_full")][:3]
+        print(f"  {r['market_id']}: xtrack={r['xtrack_confirmed']}/{r['target']} | "
+              f"P(YES)={r['p_yes']:.0%} | top3: {[(c['combo_label'], c['combo_prob_pct']) for c in top3]}")
 
-    # Save full Feishu message to file
-    print(f"\n[Saved: {fp.name}]")
-    try:
-        print(msg)
-    except UnicodeEncodeError:
-        # Windows console can't print emojis — file save still worked
-        pass
+    # Send xtrack alerts to Feishu
+    if xtrack_alerts:
+        print("\nSending xtrack change alerts...")
+        send_feishu_alert(xtrack_alerts)
 
-    # Save message to file for cron delivery
+    # Save Feishu message
     msg_file = out_dir / "latest_feishu_msg.txt"
     msg_file.write_text(msg, encoding="utf-8")
+    print(f"\n[4/4] Saved: {fp.name}")
+    print(f"Feishu msg: {msg_file}")
+
+    try:
+        print("\n" + "="*50)
+        print(msg)
+    except UnicodeEncodeError:
+        pass
 
     return 0
 
