@@ -15,7 +15,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 TRACKER_DIR = Path(r"C:\Users\Administrator\.openclaw\workspace\polymarket-elon-tracker")
-PY = r"C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe"
+PY = "py"  # Use py launcher (Python 3.12, resolves WindowsApps python.exe confusion)
 sys.path.insert(0, str(TRACKER_DIR / "src"))
 
 from full_analyzer import (

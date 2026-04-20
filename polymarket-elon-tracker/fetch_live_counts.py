@@ -1,18 +1,14 @@
-"""
-Fetch live xtrack confirmed counts from Polymarket market pages.
-Uses browser relay to get the TWEET COUNT figure shown on each market page.
+"""Fetch live xtrack counts from Polymarket via HTTP (no browser relay needed).
 
-xtrack.polymarket.com is BLOCKED from this machine, but the Polymarket
-market pages show the xtrack Post Counter directly.
+xtrack.polymarket.com is BLOCKED, but the Polymarket event pages embed
+the xtrack Post Counter in the page HTML. We extract it via regex.
 """
 import json
 import re
+import time
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
-
-TARGET = "B8795CA0F4574E46F3E6F21B1D5F8F4E"
-NODE = r"C:\Program Files\nodejs\node.exe"
-OC_MJS = r"C:\Users\Administrator\AppData\Roaming\npm\node_modules\openclaw\openclaw.mjs"
 
 MARKETS = [
     {"id": "apr14-21", "slug": "elon-musk-of-tweets-april-14-april-21",
@@ -23,162 +19,69 @@ MARKETS = [
      "url": "https://polymarket.com/event/elon-musk-of-tweets-may-2026"},
 ]
 
-
-def run_node(args, timeout=60):
-    import subprocess
-    cmd = [NODE, OC_MJS] + args
-    try:
-        r = subprocess.run(cmd, capture_output=True, timeout=timeout,
-                          encoding="utf-8", errors="replace")
-        return r.stdout
-    except Exception as e:
-        return f"ERROR: {e}"
+PROXY = urllib.request.ProxyHandler({"http": "http://127.0.0.1:7890", "https": "http://127.0.0.1:7890"})
+opener = urllib.request.build_opener(PROXY)
+HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
 
-def navigate(url):
-    return run_node([
-        "browser", "navigate",
-        "--target-id", TARGET,
-        "--browser-profile", "chrome",
-        "--url", url,
-        "--json"
-    ], timeout=35)
+def fetch_html(url, timeout=20) -> str:
+    """Fetch HTML page via HTTP."""
+    req = urllib.request.Request(url, headers=HEADERS)
+    with opener.open(req, timeout=timeout) as resp:
+        return resp.read().decode("utf-8", errors="replace")
 
 
-def evaluate(js, timeout_ms=25000):
-    result = run_node([
-        "browser", "evaluate",
-        "--fn", js,
-        "--target-id", TARGET,
-        "--browser-profile", "chrome",
-        "--timeout", str(timeout_ms),
-        "--json"
-    ], timeout=timeout_ms // 1000 + 20)
-    if not result:
-        return None
-    text = result.strip()
-    try:
-        data = json.loads(text)
-        return data.get("result", None)
-    except Exception:
-        return None
-
-
-def fetch_tweet_count(url) -> dict:
-    """Navigate to market page and extract TWEET COUNT value."""
-    print(f"  Navigating to {url}...")
-    nav = navigate(url)
-    import time; time.sleep(4)  # Extra time for Polymarket to render
-
-    # JS: find element with exact text "TWEET COUNT", then get nearby 2-4 digit number
-    js = r"""(function(){
-    var result = {error: 'not found'};
-    var all = document.querySelectorAll('*');
-    for(var i=0;i<all.length;i++){
-        var el = all[i];
-        if(el.childElementCount === 0){
-            var t = el.textContent.trim();
-            if(t === 'TWEET COUNT'){
-                var parent = el.parentElement;
-                if(parent){
-                    var ctx = parent.innerText;
-                    var nums = ctx.match(/\d+/g);
-                    if(nums && nums.length > 0){
-                        var valid = nums.filter(function(n){ return n.length >= 2 && n.length <= 4; });
-                        if(valid.length > 0){
-                            result = {label: t, value: parseInt(valid[0]), context: ctx.substring(0,150)};
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    // Fallback: scan entire body
-    if(result.error){
-        var body = document.body.innerText;
-        var idx = body.indexOf('TWEET COUNT');
-        if(idx >= 0){
-            var chunk = body.substring(idx, idx+200);
-            var nums = chunk.match(/\d{2,4}/g);
-            if(nums && nums.length > 0){
-                result = {label: 'TWEET COUNT', value: parseInt(nums[0]), context: chunk.substring(0,150)};
-            }
-        }
-    }
-    return result;
-})()"""
-
-    result = evaluate(js, timeout_ms=25000)
-    if result and not result.get("error"):
-        print(f"  Found: TWEET COUNT = {result.get('value')} (ctx: {str(result.get('context',''))[:80]})")
-        return result
-    elif result:
-        print(f"  Failed: {result.get('error', 'no result')}")
-    else:
-        print(f"  No result from JS")
-    return {"error": "extraction failed"}
-
-
-def fetch_pm_prices(url) -> dict:
-    """Extract YES and NO prices from Polymarket market."""
-    js = """(function(){
-var results = {yes: null, no: null};
-// Find percentage values
-var allEls = document.querySelectorAll('*');
-for(var i=0;i<allEls.length;i++){
-  var el = allEls[i];
-  if(el.childElementCount === 0){
-    var t = el.innerText.trim();
-    // Match percentage like "88%" or "0.88"
-    var pct = t.match(/^(\\d+(?:\\.\\d+)?)%?$/);
-    if(pct && parseFloat(pct[1]) > 0 && parseFloat(pct[1]) <= 100){
-      var parent = el.parentElement;
-      if(parent){
-        var pt = parent.innerText || '';
-        if(pt.toLowerCase().includes('yes') || pt.toLowerCase().includes('y'))
-          results.yes = parseFloat(pct[1]) / (t.includes('%') ? 100 : 1);
-        if(pt.toLowerCase().includes('no ') || pt.toLowerCase().includes('no\\b'))
-          results.no = parseFloat(pct[1]) / (t.includes('%') ? 100 : 1);
-      }
-    }
-  }
-}
-return results;
-})()"""
-    try:
-        result = evaluate(js, timeout_ms=15000)
-        return result or {}
-    except:
-        return {}
+def extract_tweet_count(html: str) -> int:
+    """Extract TWEET COUNT value from Polymarket page HTML.
+    
+    The HTML contains: ...TWEET COUNT...</div><span class="...">139</span>...
+    We need the first 2-4 digit number that appears AFTER the TWEET COUNT label.
+    """
+    # Pattern: TWEET COUNT followed by any content, then a 2-4 digit number
+    # Example: TWEET COUNT</span></div><span ...>139</span>
+    pattern = r'TWEET\s+COUNT[^<]{0,200}?([0-9]{2,4})'
+    matches = re.findall(pattern, html)
+    if matches:
+        return int(matches[0])
+    
+    # Fallback: find "TWEET COUNT" and get first number in next 200 chars
+    idx = html.find("TWEET COUNT")
+    if idx >= 0:
+        chunk = html[idx:idx+300]
+        numbers = re.findall(r'\b([0-9]{2,4})\b', chunk)
+        if numbers:
+            return int(numbers[0])
+    return None
 
 
 def main():
-    print(f"Fetching live xtrack counts from Polymarket...")
+    print(f"Fetching live xtrack counts from Polymarket via HTTP...")
     print(f"Time: {datetime.now(timezone.utc).isoformat()}")
     print()
 
     counts = {}
     for m in MARKETS:
         print(f"[{m['id']}] {m['url']}")
-        count_data = fetch_tweet_count(m["url"])
-        tweet_count = count_data.get("value", None)
-        print(f"  xtrack confirmed: {tweet_count}")
-        if count_data.get("context"):
-            print(f"  context: {count_data['context'][:100]}")
+        try:
+            html = fetch_html(m["url"])
+            print(f"  HTML length: {len(html)}")
+            tweet_count = extract_tweet_count(html)
+            print(f"  xtrack confirmed: {tweet_count}")
+        except Exception as e:
+            print(f"  ERROR: {e}")
+            tweet_count = None
 
         counts[m["id"]] = {
             "xtrack_confirmed": tweet_count,
-            "fetch_time": datetime.now(timezone.utc).isoformat(),
-            "raw_data": count_data,
+            "source": "polymarket_html",
+            "fetched_at": time.time(),
         }
 
-    # Save to JSON for analyzer to pick up
+    # Save to JSON
     out_path = Path(__file__).parent / "data" / "live_xtrack.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(counts, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\nSaved to: {out_path}")
-    print()
 
     for cid, data in counts.items():
         tc = data.get("xtrack_confirmed", "ERROR")

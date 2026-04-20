@@ -1,20 +1,20 @@
 {
   "apr14-21": {
-    "yes": null,
-    "no": null,
-    "raw_prices": [],
-    "fetched_at": 1776615539.767714
+    "yes": 0.0005,
+    "no": 0.9995,
+    "source": "html_fallback",
+    "fetched_at": 1776694875.94109
   },
   "apr17-24": {
-    "yes": null,
-    "no": null,
-    "raw_prices": [],
-    "fetched_at": 1776615550.6470037
+    "yes": 0.0005,
+    "no": 0.9995,
+    "source": "html_fallback",
+    "fetched_at": 1776694883.5787003
   },
   "may2026": {
-    "yes": null,
-    "no": null,
-    "raw_prices": [],
-    "fetched_at": 1776615561.4620595
+    "yes": 0.0015,
+    "no": 0.9985,
+    "source": "html_fallback",
+    "fetched_at": 1776694894.98321
   }
 }
