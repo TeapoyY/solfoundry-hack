@@ -73,6 +73,31 @@ def send_feishu_alert(alerts: list):
         print(f"Feishu alert failed: {e}")
 
 
+# ── Fetch live xtrack counts via browser relay ───────────────────────────────
+def fetch_live_counts_now() -> dict:
+    """
+    Run fetch_live_counts.py to get real-time xtrack confirmed counts.
+    Returns dict like {"apr14-21": {"xtrack_confirmed": 170, ...}, ...}
+    """
+    print("Fetching live xtrack counts from Polymarket...")
+    result = subprocess.run(
+        [PY, str(TRACKER_DIR / "fetch_live_counts.py")],
+        capture_output=True, text=True, timeout=180
+    )
+    counts_path = TRACKER_DIR / "data" / "live_xtrack.json"
+    if counts_path.exists():
+        try:
+            data = json.loads(counts_path.read_text("utf-8"))
+            for mid, d in data.items():
+                tc = d.get("xtrack_confirmed")
+                print(f"  {mid}: xtrack confirmed = {tc}")
+            return data
+        except Exception:
+            pass
+    print("  No live xtrack data fetched (browser relay may be unavailable)")
+    return {}
+
+
 # ── Fetch live prices via browser ───────────────────────────────────────────
 def fetch_live_prices_now() -> dict:
     """
@@ -221,12 +246,25 @@ def main():
     now_utc = datetime.now(timezone.utc)
     print(f"\n=== HOURLY REPORT {now_utc.isoformat()} ===")
 
+    # 0. Fetch live xtrack counts FIRST (this is the main fix)
+    print("\n[0/5] Fetching live xtrack counts from Polymarket...")
+    live_counts = fetch_live_counts_now()
+
+    # 0b. Apply live counts to MARKETS so subsequent functions get real data
+    for m in MARKETS:
+        cid = m["id"]
+        if cid in live_counts:
+            tc = live_counts[cid].get("xtrack_confirmed")
+            if tc is not None:
+                m["xtrack_confirmed"] = tc
+                print(f"  Updated {cid} xtrack_confirmed = {tc}")
+
     # 1. Check xtrack changes BEFORE analysis (compare with previous snapshot)
-    print("\n[1/4] Checking xtrack changes...")
+    print("\n[1/5] Checking xtrack changes vs previous snapshot...")
     xtrack_alerts = check_xtrack_changes(now_utc)
 
     # 2. Fetch live prices via browser relay
-    print("\n[2/4] Fetching live Polymarket prices...")
+    print("\n[2/5] Fetching live Polymarket prices...")
     live_prices = fetch_live_prices_now()
     if live_prices:
         for mid, data in live_prices.items():
@@ -236,7 +274,7 @@ def main():
         print("  No live prices fetched (browser relay may be unavailable)")
 
     # 3. Save current xtrack snapshot AFTER analysis (for next-run comparison)
-    print("\n[3/4] Running analysis...")
+    print("\n[3/5] Running analysis...")
     tweets_path = TRACKER_DIR / "data" / "tweets_latest.json"
     tweets = []
     if tweets_path.exists():
@@ -285,6 +323,7 @@ def main():
         results.append(r)
 
     # 4. Save snapshot AFTER analysis (for next-run change detection)
+    print("\n[4/5] Saving xtrack snapshot...")
     save_xtrack_snapshot(now_utc)
 
     # Save output files
@@ -323,7 +362,7 @@ def main():
     # Save Feishu message
     msg_file = out_dir / "latest_feishu_msg.txt"
     msg_file.write_text(msg, encoding="utf-8")
-    print(f"\n[4/4] Saved: {fp.name}")
+    print(f"\n[5/5] Saved: {fp.name}")
     print(f"Feishu msg: {msg_file}")
 
     try:

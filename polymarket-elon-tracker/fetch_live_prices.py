@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-Fetch live Polymarket YES/NO prices via browser relay.
-Stores results to data/live_prices.json.
+Fetch live Polymarket YES/NO prices via browser relay (CLI subprocess).
+Uses the same approach as fetch_live_counts.py.
+Navigates to each market page and extracts prices from the embedded React JSON.
 """
 import json
 import subprocess
-import sys
 import time
 from pathlib import Path
 
 NODE = r"C:\Program Files\nodejs\node.exe"
 OC_MJS = r"C:\Users\Administrator\AppData\Roaming\npm\node_modules\openclaw\openclaw.mjs"
-TARGET = "B8795CA0F4574E46F3E6F21B1D5F8F4E"
+PROFILE = "chrome"
 DATA_DIR = Path(__file__).parent / "data"
 
 MARKET_SLUGS = [
@@ -20,180 +20,140 @@ MARKET_SLUGS = [
     ("may2026",  "https://polymarket.com/event/elon-musk-of-tweets-may-2026"),
 ]
 
-def run_node(args, timeout=50):
-    cmd = [NODE, OC_MJS] + args
+
+def run_browser(args, timeout=60):
+    cmd = [NODE, OC_MJS, "browser", "--browser-profile", PROFILE] + args
     try:
         r = subprocess.run(cmd, capture_output=True, timeout=timeout, encoding="utf-8", errors="replace")
         return r.stdout
     except Exception as e:
         return f"ERROR: {e}"
 
+
+def bnav(url):
+    """Navigate to URL and wait for page to load."""
+    run_browser(["navigate", "--url", url], timeout=20)
+    time.sleep(4)
+
+
 def beval(js, timeout_ms=25000):
-    result = run_node([
-        "browser", "evaluate",
-        "--fn", js,
-        "--target-id", TARGET,
-        "--browser-profile", "chrome",
-        "--timeout", str(timeout_ms),
-        "--json"
-    ], timeout=timeout_ms // 1000 + 15)
+    """Run JS in browser and return result (same as fetch_live_counts.py)."""
+    result = run_browser(
+        ["evaluate", "--fn", js, "--timeout", str(timeout_ms)],
+        timeout=timeout_ms // 1000 + 20
+    )
     if not result:
         return None
     try:
         data = json.loads(result.strip())
         return data.get("result", None)
     except:
-        import re
-        m = re.search(r'\{[\s\S]*\}', result)
-        if m:
-            try:
-                return json.loads(m.group(0)).get("result", None)
-            except:
-                pass
         return None
 
-def bnav(url):
-    run_node([
-        "browser", "navigate",
-        "--target-id", TARGET,
-        "--browser-profile", "chrome",
-        "--url", url
-    ], timeout=15)
-    time.sleep(3)
 
-def fetch_price_for_market(market_id: str, url: str) -> dict:
-    """Navigate to market page and extract YES/NO prices."""
+def fetch_price_from_page(slug: str, url: str) -> dict:
+    """
+    Navigate to market page and extract YES/NO prices from embedded React JSON.
+    """
+    print(f"  Navigating to {url}...")
     bnav(url)
-    time.sleep(2)
 
-    # Try multiple selectors for Polymarket price display
-    js = r"""() => {
-        // Strategy 1: look for price elements with explicit YES/NO labels
-        const yesEls = document.querySelectorAll('[class*="price"], [class*="outcome"], [class*="side"]');
-        let yesPrice = null, noPrice = null;
+    # JS: extract binary Yes/No prices from Next.js React JSON
+    # Look for "outcomes":["Yes","No"] in the Next.js state and get the outcomePrices
+    js = r"""(function(){
+    var scripts = document.querySelectorAll('script');
+    var results = [];
+    for(var i=0;i<scripts.length;i++){
+        var t = scripts[i].textContent;
+        if(t.length < 50000) continue;
+        if(t.indexOf('"outcomes":["Yes","No"]') < 0 && t.indexOf('"outcomes":["No","Yes"]') < 0) continue;
 
-        // Look for YES label + price
-        for (const el of yesEls) {
-            const text = el.textContent.trim();
-            const parent = el.closest('[class]');
-            const parentText = parent ? parent.textContent : '';
-            if ((text.includes('YES') || text.includes('yes') || text.includes('Yes'))
-                && !text.includes('NO') && !text.includes('no')) {
-                const m = text.match(/0\.\d+/);
-                if (m && !yesPrice) yesPrice = parseFloat(m[0]);
+        // Search for each binary Yes/No occurrence
+        var searchFrom = 0;
+        while(true){
+            var idx = t.indexOf('"outcomes":["Yes","No"]', searchFrom);
+            if(idx < 0) idx = t.indexOf('"outcomes":["No","Yes"]', searchFrom);
+            if(idx < 0) break;
+
+            // Get window around the outcomes array
+            var wStart = Math.max(0, idx - 4000);
+            var wEnd = Math.min(t.length, idx + 500);
+            var window = t.substring(wStart, wEnd);
+
+            // Extract outcomePrices: ["0.96","0.04"] style
+            var priceMatch = window.match(/"outcomePrices"\s*:\s*\[([^\]]+)\]/);
+            var outMatch = window.match(/"outcomes"\s*:\s*\[([^\]]+)\]/);
+
+            if(priceMatch && priceMatch[1]){
+                var priceStrs = priceMatch[1].split(',');
+                var prices = [];
+                for(var p=0;p<priceStrs.length;p++){
+                    var v = parseFloat(priceStrs[p].trim().replace(/"/g,''));
+                    if(!isNaN(v)) prices.push(v);
+                }
+
+                if(prices.length === 2 && prices[0] >= 0 && prices[0] <= 1 && prices[1] >= 0 && prices[1] <= 1){
+                    // Determine Yes/No from outcomes order
+                    var outs = outMatch && outMatch[1] ? outMatch[1].split(',').map(function(o){ return o.trim().replace(/"/g,''); }) : ['Yes','No'];
+                    var yesIdx = outs.indexOf('Yes');
+                    var noIdx = outs.indexOf('No');
+                    if(yesIdx < 0) yesIdx = 0;
+                    if(noIdx < 0) noIdx = 1;
+
+                    var yesPrice = prices[yesIdx];
+                    var noPrice = prices[noIdx];
+
+                    // Get question text
+                    var qMatch = window.match(/"question"\s*:\s*"([^"]+)"/);
+                    var question = qMatch ? qMatch[1].substring(0, 100) : 'unknown';
+
+                    results.push({yes: yesPrice, no: noPrice, question: question});
+                }
             }
-            if ((text.includes('NO') || text.includes('no') || text.includes('No'))
-                && !text.includes('YES') && !text.includes('YES')) {
-                const m = text.match(/0\.\d+/);
-                if (m && !noPrice) noPrice = parseFloat(m[0]);
-            }
+            searchFrom = idx + 1;
+            if(results.length >= 3) break;
         }
+        if(results.length > 0) break;
+    }
+    return results;
+})()"""
 
-        // Strategy 2: look for numeric spans near YES/NO text
-        const allSpans = document.querySelectorAll('span');
-        for (const span of allSpans) {
-            const t = span.textContent.trim();
-            const prev = span.previousElementSibling;
-            const next = span.nextElementSibling;
-            const prevT = prev ? prev.textContent.trim() : '';
-            const nextT = next ? next.textContent.trim() : '';
-            if ((prevT.includes('YES') || nextT.includes('YES')) && !t.includes('NO')) {
-                const m = t.match(/0\.\d+/);
-                if (m && !yesPrice) yesPrice = parseFloat(m[0]);
-            }
-            if ((prevT.includes('NO ') || prevT.includes('NO,') || nextT.includes('NO ')) && !t.includes('YES')) {
-                const m = t.match(/0\.\d+/);
-                if (m && !noPrice) noPrice = parseFloat(m[0]);
-            }
-        }
-
-        // Strategy 3: look for any price displayed prominently (top number)
-        const prices = [];
-        document.querySelectorAll('[class*="bid"], [class*="ask"], [class*="last"]').forEach(el => {
-            const t = el.textContent;
-            const m = t.match(/0\.\d+/);
-            if (m) prices.push(parseFloat(m[0]));
-        });
-
-        // Strategy 4: generic price scan near the market title
-        const h1 = document.querySelector('h1');
-        if (h1) {
-            const parent = h1.closest('section, div');
-            if (parent) {
-                const spans = parent.querySelectorAll('span');
-                spans.forEach(s => {
-                    const t = s.textContent;
-                    const m = t.match(/0\.\d+/);
-                    if (m) {
-                        const v = parseFloat(m[0]);
-                        if (v > 0 && v <= 1) prices.push(v);
-                    }
-                });
-            }
-        }
-
-        // Deduplicate and pick the two most likely
-        const unique = [...new Set(prices)].sort();
-        if (unique.length >= 2) {
-            yesPrice = yesPrice || unique[unique.length - 1];
-            noPrice = noPrice || (1 - yesPrice);
-        } else if (unique.length === 1) {
-            if (!yesPrice) yesPrice = unique[0];
-        }
-
-        return JSON.stringify({ yesPrice, noPrice, prices: unique.slice(0, 5) });
-    }"""
-
-    result = beval(js, timeout_ms=20000)
-    if not result:
-        return {"yes": None, "no": None, "raw": []}
-
-    try:
-        data = json.loads(result) if isinstance(result, str) else result
-        yes = data.get("yesPrice")
-        no = data.get("noPrice")
-        raw = data.get("prices", [])
-
-        # Sanity check
-        if yes and (yes < 0.01 or yes > 0.99):
-            yes = None
-        if no and (no < 0.01 or no > 0.99):
-            no = None
-        # YES + NO should ≈ 1
-        if yes and no and abs(yes + no - 1.0) > 0.1:
-            no = 1 - yes
-
-        return {"yes": yes, "no": no, "raw": raw}
-    except:
-        return {"yes": None, "no": None, "raw": []}
+    result = beval(js, timeout_ms=30000)
+    if isinstance(result, list) and len(result) > 0:
+        for item in result:
+            if isinstance(item, dict) and item.get("yes") is not None:
+                print(f"  Found: YES={item['yes']:.4f} NO={item.get('no', 1-item['yes']):.4f} | {item.get('question','')[:80]}")
+                return {"yes": float(item["yes"]), "no": float(item.get("no", 1 - item["yes"]))}
+    print(f"  No binary market found. result={str(result)[:200]}")
+    return {"yes": None, "no": None}
 
 
 def fetch_all_live_prices() -> dict:
     """Fetch prices for all markets via browser relay."""
     results = {}
     for market_id, url in MARKET_SLUGS:
-        print(f"  Fetching {market_id}...", end=" ", flush=True)
+        slug = url.split("/event/")[1]
+        print(f"[{market_id}]")
         try:
-            price_data = fetch_price_for_market(market_id, url)
+            price_data = fetch_price_from_page(slug, url)
             results[market_id] = {
-                "yes": price_data["yes"],
-                "no": price_data["no"],
-                "raw_prices": price_data["raw"],
+                "yes": price_data.get("yes"),
+                "no": price_data.get("no"),
                 "fetched_at": time.time(),
             }
-            if price_data["yes"]:
-                print(f"YES={price_data['yes']:.2f} NO={price_data.get('no', '?'):.2f}")
+            if price_data.get("yes") is not None:
+                no = price_data.get("no", 1 - price_data["yes"])
+                print(f"  => YES={price_data['yes']:.4f} NO={no:.4f}")
             else:
-                print(f"no data (raw={price_data['raw'][:3]})")
+                print(f"  => no price found")
         except Exception as e:
             results[market_id] = {"yes": None, "no": None, "error": str(e)}
-            print(f"error: {e}")
-        time.sleep(1)
+            print(f"  => error: {e}")
+        time.sleep(2)
     return results
 
 
 def save_live_prices(prices: dict):
-    """Save to data/live_prices.json."""
     DATA_DIR.mkdir(exist_ok=True, parents=True)
     path = DATA_DIR / "live_prices.json"
     path.write_text(json.dumps(prices, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -201,16 +161,14 @@ def save_live_prices(prices: dict):
 
 
 def main():
-    print("Fetching live Polymarket prices via browser relay...")
+    print("Fetching live Polymarket prices via browser relay (CLI)...\n")
     prices = fetch_all_live_prices()
     save_live_prices(prices)
-
-    # Summary
     for mkt, data in prices.items():
         yes = data.get("yes")
         no = data.get("no")
-        if yes:
-            print(f"  {mkt}: YES={yes:.2f} NO={no:.2f if no else '?'}")
+        if yes is not None:
+            print(f"  {mkt}: YES={yes:.4f} NO={no:.4f if no else '?'}")
         else:
             print(f"  {mkt}: no live price")
 
