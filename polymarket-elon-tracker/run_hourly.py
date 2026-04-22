@@ -24,35 +24,105 @@ from full_analyzer import (
     mc_final_count, DAILY_RATE, PEAK_HOURS, save_xtrack_snapshot
 )
 
-# ── xtrack Time-Series Logger ─────────────────────────────────────────────────
-def record_xtrack_series(live_counts: dict, live_prices: dict, now_utc: datetime):
+# ── Prediction Time-Series Logger ────────────────────────────────────────────
+def record_prediction_series(live_counts: dict, live_prices: dict,
+                              results: list, now_utc: datetime):
     """
-    Append xtrack readings to a persistent JSONL log for historical analysis.
-    File: data/xtrack_series.jsonl
-    Each line: {"ts": "...", "market_id": "...", "xtrack": N, "source": "...", "price_yes": N}
+    Append comprehensive prediction records to a persistent JSONL log.
+    File: data/prediction_series.jsonl
+    Each line captures all inputs + model outputs for a single market at a single ts.
+    Used for: backtesting, model calibration, edge evaluation over time.
     """
-    series_path = TRACKER_DIR / "data" / "xtrack_series.jsonl"
+    series_path = TRACKER_DIR / "data" / "prediction_series.jsonl"
     rows = []
-    for mid, count_data in live_counts.items():
+
+    for r in results:
+        mid = r["market_id"]
+        count_data = live_counts.get(mid, {})
+        live_p   = live_prices.get(mid, {})
+
         tc = count_data.get("xtrack_confirmed")
-        # Skip null readings (market ended or relay unavailable)
         if tc is None:
-            continue
-        live_p = live_prices.get(mid, {})
-        rows.append({
-            "ts": now_utc.isoformat(),
-            "market_id": mid,
-            "xtrack": tc,
-            "source": count_data.get("source", "unknown"),
-            "price_yes": live_p.get("yes"),
-            "price_no": live_p.get("no"),
-        })
+            continue  # skip null readings (market ended / relay unavailable)
+
+        # Extract MC scenario weights cleanly
+        mc = r.get("mc", {})
+        scenarios = mc.get("scenarios", {})
+        row = {
+            # ── Timestamp & identity ──────────────────────────
+            "ts":           now_utc.isoformat(),
+            "market_id":    mid,
+            "window_start": r.get("window", "").split("~")[0].strip(),
+            "window_end":   r.get("window", "").split("~")[-1].strip(),
+
+            # ── Core inputs ─────────────────────────────────────
+            "xtrack":         tc,
+            "target":         r.get("target", 0),
+            "hours_left":     round(r.get("hours_remaining", 0), 1),
+            "days_left":      round(r.get("days_remaining", 0), 2),
+            "remaining":      r.get("remaining_to_target", 0),
+            "tweets_per_hour_real":  r.get("tweets_per_hour_real_base", 0),
+            "tweets_per_hour_peak":  r.get("tweets_per_hour_peak_adjusted", 0),
+            "in_peak":        r.get("in_peak_window", False),
+            "current_hour_utc": r.get("current_hour_utc", 0),
+
+            # ── Market prices ──────────────────────────────────
+            "pm_yes_price": live_p.get("yes") or r.get("yes_price"),
+            "pm_no_price":  live_p.get("no")  or r.get("no_price"),
+            "price_source": "live" if live_p.get("yes") else "hardcoded",
+
+            # ── Our probability estimates ───────────────────────
+            "our_p_yes":    round(r.get("p_yes", 0), 4),
+            "our_p_no":     round(r.get("p_no", 0), 4),
+
+            # ── Edge & Kelly ───────────────────────────────────
+            "edge_yes":     round(r.get("edge_yes", 0), 4),
+            "edge_no":      round(r.get("edge_no", 0), 4),
+            "kelly_yes_full":   round(r.get("kelly_yes_full", 0), 4),
+            "kelly_yes_quarter":round(r.get("kelly_yes_quarter", 0), 4),
+            "kelly_no_full":    round(r.get("kelly_no_full", 0), 4),
+            "kelly_no_quarter": round(r.get("kelly_no_quarter", 0), 4),
+
+            # ── Monte-Carlo summary ────────────────────────────
+            "mc_mean":   mc.get("mean"),
+            "mc_median": mc.get("median"),
+            "mc_p10":    mc.get("p10"),
+            "mc_p90":    mc.get("p90"),
+
+            # MC scenario breakdown
+            "mc_bear_rate":    scenarios.get("bear", {}).get("rate"),
+            "mc_bear_weight":  scenarios.get("bear", {}).get("weight"),
+            "mc_base_rate":    scenarios.get("base", {}).get("rate"),
+            "mc_base_weight":  scenarios.get("base", {}).get("weight"),
+            "mc_bull_rate":    scenarios.get("bull", {}).get("rate"),
+            "mc_bull_weight":  scenarios.get("bull", {}).get("weight"),
+
+            # ── Velocity ──────────────────────────────────────
+            "velocity_6h":  r.get("velocity", {}).get("6", {}).get("count", 0),
+            "velocity_12h": r.get("velocity", {}).get("12", {}).get("count", 0),
+            "velocity_24h": r.get("velocity", {}).get("24", {}).get("count", 0),
+            "velocity_48h": r.get("velocity", {}).get("48", {}).get("count", 0),
+            "velocity_72h": r.get("velocity", {}).get("72", {}).get("count", 0),
+
+            # ── Required rate ──────────────────────────────────
+            "required_tph": r.get("tweets_needed_per_hour", 0),
+            "velocity_ratio": round(r.get("velocity_ratio", 0), 3),
+
+            # ── Signal ──────────────────────────────────────────
+            "signal":   r.get("best_bet", "NO_EDGE"),
+            "is_forecast": r.get("is_forecast", False),
+
+            # ── Source ──────────────────────────────────────────
+            "xtrack_source": count_data.get("source", "unknown"),
+        }
+        rows.append(row)
+
     if not rows:
         return
     with open(series_path, "a", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    print(f"  → xtrack series logged: {len(rows)} rows to {series_path.name}")
+    print(f"  → Prediction series logged: {len(rows)} rows → {series_path.name}")
 
 
 # ── xtrack change detection ──────────────────────────────────────────────────
@@ -304,12 +374,8 @@ def main():
     else:
         print("  No live prices fetched (browser relay may be unavailable)")
 
-    # 2b. Record xtrack to time-series log for historical analysis
-    print("\n[2b/5] Recording xtrack time-series...")
-    record_xtrack_series(live_counts, live_prices, now_utc)
-
-    # 3. Save current xtrack snapshot AFTER analysis (for next-run comparison)
-    print("\n[4/6] Running analysis...")
+    # 3. Run analysis and record prediction time-series
+    print("\n[3/5] Running analysis + recording prediction series...")
     tweets_path = TRACKER_DIR / "data" / "tweets_latest.json"
     tweets = []
     if tweets_path.exists():
@@ -357,8 +423,11 @@ def main():
         r.update(hl)
         results.append(r)
 
+    # Record prediction inputs + outputs to time-series log
+    record_prediction_series(live_counts, live_prices, results, now_utc)
+
     # 4. Save snapshot AFTER analysis (for next-run change detection)
-    print("\n[4/6] Saving xtrack snapshot...")
+    print("\n[4/5] Saving xtrack snapshot...")
     save_xtrack_snapshot(now_utc)
 
     # Save output files
@@ -397,7 +466,7 @@ def main():
     # Save Feishu message
     msg_file = out_dir / "latest_feishu_msg.txt"
     msg_file.write_text(msg, encoding="utf-8")
-    print(f"\n[6/6] Saved: {fp.name}")
+    print(f"\n[5/5] Saved: {fp.name}")
     print(f"Feishu msg: {msg_file}")
 
     try:
