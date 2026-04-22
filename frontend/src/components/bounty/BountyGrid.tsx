@@ -23,27 +23,14 @@ export function BountyGrid() {
   const params = {
     status: statusFilter,
     skill: activeSkill !== 'All' ? activeSkill : undefined,
+    query: debouncedQuery || undefined,
   };
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError } =
     useInfiniteBounties(params);
 
   const allBounties = data?.pages.flatMap((p) => p.items) ?? [];
-
-  // Client-side search filter
-  const filteredBounties = useMemo(() => {
-    if (!debouncedQuery.trim()) return allBounties;
-    const q = debouncedQuery.toLowerCase();
-    return allBounties.filter((b) => {
-      const titleMatch = b.title?.toLowerCase().includes(q);
-      const descMatch = b.description?.toLowerCase().includes(q);
-      const skillMatch = b.skills?.some((s) => s.toLowerCase().includes(q));
-      const catMatch = b.category?.toLowerCase().includes(q);
-      const orgMatch = b.org_name?.toLowerCase().includes(q);
-      const repoMatch = b.repo_name?.toLowerCase().includes(q);
-      return titleMatch || descMatch || skillMatch || catMatch || orgMatch || repoMatch;
-    });
-  }, [allBounties, debouncedQuery]);
+  const totalCount = data?.pages[0]?.total ?? allBounties.length;
 
   const isSearching = debouncedQuery.trim().length > 0;
 
@@ -61,6 +48,7 @@ export function BountyGrid() {
               placeholder="Search bounties..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search bounties by title, description, or skill"
               className="w-full sm:w-64 appearance-none bg-forge-800 border border-border rounded-lg pl-9 pr-8 py-2 text-sm text-text-secondary placeholder-text-muted focus:border-emerald outline-none transition-colors duration-150"
             />
             {searchQuery && (
@@ -137,7 +125,7 @@ export function BountyGrid() {
         )}
 
         {/* Empty state */}
-        {!isLoading && !isError && filteredBounties.length === 0 && (
+        {!isLoading && !isError && allBounties.length === 0 && (
           <div className="text-center py-16">
             <p className="text-text-muted text-lg mb-2">
               {isSearching ? 'No bounties match your search' : 'No bounties found'}
@@ -157,14 +145,14 @@ export function BountyGrid() {
         )}
 
         {/* Result count when searching */}
-        {isSearching && !isLoading && filteredBounties.length > 0 && (
+        {isSearching && !isLoading && allBounties.length > 0 && (
           <p className="text-sm text-text-muted mb-6">
-            {filteredBounties.length} result{filteredBounties.length !== 1 ? 's' : ''} for &quot;{debouncedQuery}&quot;
+            {totalCount} result{totalCount !== 1 ? 's' : ''} for &quot;{debouncedQuery}&quot;
           </p>
         )}
 
         {/* Bounty grid */}
-        {!isLoading && filteredBounties.length > 0 && (
+        {!isLoading && allBounties.length > 0 && (
           <motion.div
             variants={staggerContainer}
             initial="initial"
@@ -172,7 +160,7 @@ export function BountyGrid() {
             viewport={{ once: true, margin: '-50px' }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
           >
-            {filteredBounties.map((bounty) => (
+            {allBounties.map((bounty) => (
               <motion.div key={bounty.id} variants={staggerItem}>
                 <BountyCard bounty={bounty} />
               </motion.div>
