@@ -25,6 +25,16 @@ export function useInfiniteBounties(params?: Omit<BountiesListParams, 'offset'>)
   });
 }
 
+// Returns the total count from the first page (only reliable when not loading more)
+export function useBountyCount(params?: Omit<BountiesListParams, 'offset'>) {
+  const { data } = useQuery({
+    queryKey: ['bounties', params],
+    queryFn: () => listBounties({ ...params, limit: 1 }),
+    staleTime: 30_000,
+  });
+  return data?.total ?? 0;
+}
+
 export function useBounty(id: string | undefined) {
   return useQuery({
     queryKey: ['bounty', id],
