@@ -66,7 +66,7 @@ export function BountyCountdown({ deadline, compact = false, showSeconds = false
 
   if (compact || variant === 'badge') {
     return (
-      <span className={`inline-flex items-center gap-1 font-mono text-xs ${style.text}`}>
+      <span className={`inline-flex items-center gap-1 font-mono text-xs ${style.text}${className ? ` ${className}` : ''}`}>
         {style.icon}
         {parts.expired ? 'Expired' : `${parts.days}d ${parts.hours}h ${parts.minutes}m`}
       </span>

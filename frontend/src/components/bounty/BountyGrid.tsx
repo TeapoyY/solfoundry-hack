@@ -152,7 +152,7 @@ export function BountyGrid() {
         )}
 
         {/* Bounty grid */}
-        {!isLoading && allBounties.length > 0 && (
+        {!isLoading && totalCount > 0 && (
           <motion.div
             variants={staggerContainer}
             initial="initial"
