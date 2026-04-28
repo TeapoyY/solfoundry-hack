@@ -1,17 +1,28 @@
+/**
+ * Bounty detail page component.
+ * @module components/bounty/BountyDetail
+ */
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Clock, GitPullRequest, ExternalLink, Loader2, Check, Copy } from 'lucide-react';
+import { ArrowLeft, GitPullRequest, ExternalLink, Loader2, Check, Copy } from 'lucide-react';
 import type { Bounty } from '../../types/bounty';
-import { timeLeft, timeAgo, formatCurrency, LANG_COLORS } from '../../lib/utils';
+import { timeAgo, formatCurrency, LANG_COLORS } from '../../lib/utils';
+import { BountyCountdown } from './BountyCountdown';
 import { useAuth } from '../../hooks/useAuth';
 import { SubmissionForm } from './SubmissionForm';
 import { fadeIn } from '../../lib/animations';
 
 interface BountyDetailProps {
+  /** Bounty object to display */
   bounty: Bounty;
 }
 
+/**
+ * Full bounty detail page with sidebar and submission form.
+ * Shows complete bounty information, reward, deadline, and submission options.
+ */
 export function BountyDetail({ bounty }: BountyDetailProps) {
   const { isAuthenticated } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -138,9 +149,7 @@ export function BountyDetail({ bounty }: BountyDetailProps) {
             {bounty.deadline && (
               <div className="flex items-center justify-between text-sm">
                 <span className="text-text-muted">Deadline</span>
-                <span className="font-mono text-status-warning inline-flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" /> {timeLeft(bounty.deadline)}
-                </span>
+                <BountyCountdown deadline={bounty.deadline} />
               </div>
             )}
             <div className="flex items-center justify-between text-sm">
