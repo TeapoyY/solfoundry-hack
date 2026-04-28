@@ -1,6 +1,13 @@
 /**
+ * Utility functions for bounty display and formatting.
+ * @module lib/utils
+ */
+
+/**
  * Format a date string into a human-readable "time left" string.
  * e.g. "3d 5h 12m", "23h 45m", "Expired"
+ * @param deadline - ISO date string for the bounty deadline
+ * @returns Human-readable countdown string
  */
 export function timeLeft(deadline: string): string {
   const now = new Date();
@@ -30,14 +37,10 @@ export function timeLeft(deadline: string): string {
 /**
  * Get detailed time breakdown for countdown display.
  * Returns parts array for flexible rendering.
+ * @param deadline - ISO date string for the bounty deadline
+ * @returns Object containing days, hours, minutes, seconds, and expired flag
  */
-export function getTimeParts(deadline: string): {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-  expired: boolean;
-} {
+export function getTimeParts(deadline: string): { days: number; hours: number; minutes: number; seconds: number; expired: boolean } {
   const now = new Date();
   const deadlineDate = new Date(deadline);
   const diff = deadlineDate.getTime() - now.getTime();
@@ -58,6 +61,8 @@ export function getTimeParts(deadline: string): {
 /**
  * Format a date string into a human-readable "time ago" string.
  * e.g. "2h ago", "3d ago"
+ * @param date - ISO date string
+ * @returns Human-readable relative time string
  */
 export function timeAgo(date: string): string {
   const now = new Date();
@@ -77,6 +82,9 @@ export function timeAgo(date: string): string {
 
 /**
  * Format a currency amount with token symbol.
+ * @param amount - Numeric reward amount
+ * @param token - Token symbol (e.g. "USDC", "SOL")
+ * @returns Formatted string with token symbol, e.g. "1.5K USDC" or "2.3M SOL"
  */
 export function formatCurrency(amount: number, token: string): string {
   if (amount >= 1000000) {
@@ -90,6 +98,7 @@ export function formatCurrency(amount: number, token: string): string {
 
 /**
  * Language/tech colors for skill tags.
+ * Maps language/technology names to their brand hex colors.
  */
 export const LANG_COLORS: Record<string, string> = {
   TypeScript: '#3178C6',

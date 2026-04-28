@@ -2,6 +2,7 @@ import type { Variants } from 'framer-motion';
 
 /**
  * Card hover animation: subtle lift and glow.
+ * Used for bounty cards in grid listings.
  */
 export const cardHover: Variants = {
   rest: { scale: 1, boxShadow: '0 0 0 0 transparent' },
@@ -14,6 +15,7 @@ export const cardHover: Variants = {
 
 /**
  * Button hover animation with tap state.
+ * Suitable for interactive button elements.
  */
 export const buttonHover: Variants = {
   rest: { scale: 1 },
@@ -23,6 +25,7 @@ export const buttonHover: Variants = {
 
 /**
  * Fade-in animation for page content.
+ * Apply to wrapper elements for entrance animation.
  */
 export const fadeIn: Variants = {
   initial: { opacity: 0, y: 12 },
@@ -31,6 +34,7 @@ export const fadeIn: Variants = {
 
 /**
  * Slide in from the right.
+ * Use for sidebar or notification elements.
  */
 export const slideInRight: Variants = {
   initial: { opacity: 0, x: 24 },
@@ -39,6 +43,7 @@ export const slideInRight: Variants = {
 
 /**
  * Page transition animation for route changes.
+ * Apply to page-level wrapper components.
  */
 export const pageTransition: Variants = {
   initial: { opacity: 0, y: 8 },
@@ -48,6 +53,7 @@ export const pageTransition: Variants = {
 
 /**
  * Stagger container for list items.
+ * Apply to parent motion.div — children should use staggerItem variants.
  */
 export const staggerContainer: Variants = {
   animate: {
@@ -59,6 +65,7 @@ export const staggerContainer: Variants = {
 
 /**
  * Stagger item animation.
+ * Apply to individual list item elements within staggerContainer.
  */
 export const staggerItem: Variants = {
   initial: { opacity: 0, y: 16 },

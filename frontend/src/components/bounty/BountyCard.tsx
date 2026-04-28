@@ -1,11 +1,21 @@
+/**
+ * Bounty card component for grid display.
+ * @module components/bounty/BountyCard
+ */
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GitPullRequest, Clock } from 'lucide-react';
+import { GitPullRequest } from 'lucide-react';
 import type { Bounty } from '../../types/bounty';
 import { cardHover } from '../../lib/animations';
-import { timeLeft, formatCurrency, LANG_COLORS } from '../../lib/utils';
+import { formatCurrency, LANG_COLORS } from '../../lib/utils';
+import { BountyCountdown } from './BountyCountdown';
 
+/**
+ * Tier badge component displaying bounty tier level.
+ * @param tier - Tier string (T1, T2, T3)
+ */
 function TierBadge({ tier }: { tier: string }) {
   const styles: Record<string, string> = {
     T1: 'bg-tier-t1/10 text-tier-t1 border border-tier-t1/20',
@@ -20,9 +30,15 @@ function TierBadge({ tier }: { tier: string }) {
 }
 
 interface BountyCardProps {
+  /** Bounty object to display */
   bounty: Bounty;
 }
 
+/**
+ * Bounty card for grid display.
+ * Shows title, reward, skills, deadline countdown, and submission count.
+ * Clicking navigates to bounty detail page.
+ */
 export function BountyCard({ bounty }: BountyCardProps) {
   const navigate = useNavigate();
 
@@ -111,10 +127,7 @@ export function BountyCard({ bounty }: BountyCardProps) {
             {bounty.submission_count} PRs
           </span>
           {bounty.deadline && (
-            <span className="inline-flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              {timeLeft(bounty.deadline)}
-            </span>
+            <BountyCountdown deadline={bounty.deadline} compact />
           )}
         </div>
       </div>

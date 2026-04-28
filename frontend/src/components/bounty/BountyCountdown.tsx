@@ -1,9 +1,29 @@
+/**
+ * Bounty countdown timer component.
+ * Displays real-time countdown to bounty deadline with urgency states.
+ * @module components/bounty/BountyCountdown
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Clock, AlertTriangle, Zap } from 'lucide-react';
 import { getTimeParts } from '../../lib/utils';
 
+/**
+ * Urgency level for countdown display.
+ * - normal: >1 day remaining
+ * - warning: <1 day remaining
+ * - urgent: <1 hour remaining
+ * - expired: deadline passed
+ */
 export type CountdownUrgency = 'normal' | 'warning' | 'urgent' | 'expired';
 
+/**
+ * Determine urgency level based on time remaining.
+ * @param expired - Whether the deadline has passed
+ * @param days - Full days remaining
+ * @param hours - Hours remaining (within current day)
+ * @returns Urgency level
+ */
 function getUrgency(expired: boolean, days: number, hours: number): CountdownUrgency {
   if (expired) return 'expired';
   if (days === 0 && hours < 1) return 'urgent';
@@ -39,16 +59,21 @@ const urgencyStyles: Record<CountdownUrgency, { text: string; bg: string; border
 };
 
 interface BountyCountdownProps {
+  /** ISO date string for the bounty deadline */
   deadline: string;
-  /** Render variant: 'default' | 'badge' (compact inline). Default: 'default'. */
-  variant?: 'default' | 'badge';
+  /** Compact: single-line layout for cards. Default: false (detailed). */
+  compact?: boolean;
   /** Show seconds tick. Default: false. */
   showSeconds?: boolean;
   /** Additional CSS classes. */
   className?: string;
 }
 
-export function BountyCountdown({ deadline, variant = 'default', showSeconds = false, className = '' }: BountyCountdownProps) {
+/**
+ * Real-time countdown timer for bounty deadlines.
+ * Updates every second and changes color/style based on urgency.
+ */
+export function BountyCountdown({ deadline, compact = false, showSeconds = false, className = '' }: BountyCountdownProps) {
   const [parts, setParts] = useState(() => getTimeParts(deadline));
 
   useEffect(() => {
@@ -62,8 +87,7 @@ export function BountyCountdown({ deadline, variant = 'default', showSeconds = f
   const urgency = getUrgency(parts.expired, parts.days, parts.hours);
   const style = urgencyStyles[urgency];
 
-  // Badge (compact) variant — always renders badge markup regardless of expired state
-  if (variant === 'badge') {
+  if (compact) {
     return (
       <span className={`inline-flex items-center gap-1 font-mono text-xs ${style.text}`}>
         {style.icon}
@@ -72,7 +96,6 @@ export function BountyCountdown({ deadline, variant = 'default', showSeconds = f
     );
   }
 
-  // Default variant — full pill with background and border
   return (
     <div
       className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${style.bg} ${style.border} ${className}`}
