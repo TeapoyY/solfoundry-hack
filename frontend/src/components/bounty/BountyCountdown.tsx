@@ -63,23 +63,27 @@ export function BountyCountdown({ deadline, compact = false, showSeconds = false
   const style = urgencyStyles[urgency];
 
   if (compact) {
+    const icon = <Clock className="w-3.5 h-3.5" />;
     return (
-      <span className={`inline-flex items-center gap-1 font-mono text-xs ${style.text}`}>
-        {style.icon}
+      <span className={`inline-flex items-center gap-1 font-mono text-xs ${urgencyStyles[urgency].text}`}>
+        {icon}
         {parts.expired ? 'Expired' : `${parts.days}d ${parts.hours}h ${parts.minutes}m`}
       </span>
     );
   }
 
+  const icon = urgencyStyles[urgency].icon;
+  const textStyle = urgencyStyles[urgency].text;
+
   return (
     <div
-      className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${style.bg} ${style.border} ${className}`}
+      className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${urgencyStyles[urgency].bg} ${urgencyStyles[urgency].border} ${className}`}
     >
-      <span className={style.text}>{style.icon}</span>
+      <span className={textStyle}>{icon}</span>
       {parts.expired ? (
-        <span className={`font-mono text-sm font-medium ${style.text}`}>Expired</span>
+        <span className={`font-mono text-sm font-medium ${textStyle}`}>Expired</span>
       ) : (
-        <span className={`font-mono text-sm font-medium ${style.text}`}>
+        <span className={`font-mono text-sm font-medium ${textStyle}`}>
           {parts.days > 0 && <span>{parts.days}<span className="text-xs ml-0.5 mr-1">d</span></span>}
           {parts.days > 0 && parts.hours > 0 && <span>{parts.hours}<span className="text-xs ml-0.5 mr-1">h</span></span>}
           {parts.days === 0 && <span>{parts.hours}<span className="text-xs ml-0.5 mr-1">h</span></span>}
