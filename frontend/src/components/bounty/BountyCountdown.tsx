@@ -4,6 +4,14 @@ import { getTimeParts } from '../../lib/utils';
 
 export type CountdownUrgency = 'normal' | 'warning' | 'urgent' | 'expired';
 
+/**
+ * Determines the urgency tier of a countdown based on time remaining.
+ *
+ * @param expired    - Whether the deadline has already passed.
+ * @param days       - Whole days remaining.
+ * @param hours      - Whole hours remaining (used when days === 0).
+ * @returns Urgency level: expired > urgent (under 1h) > warning (under 1d) > normal.
+ */
 function getUrgency(expired: boolean, days: number, hours: number): CountdownUrgency {
   if (expired) return 'expired';
   if (days === 0 && hours < 1) return 'urgent';
@@ -48,6 +56,17 @@ interface BountyCountdownProps {
   className?: string;
 }
 
+/**
+ * Live countdown timer for a bounty deadline.
+ *
+ * Updates every second via `setInterval`. Reflects urgency through
+ * colour and icon changes as the deadline approaches.
+ *
+ * @param deadline    - ISO date string for the bounty deadline.
+ * @param compact     - Single-line layout for use inside cards. Default: false.
+ * @param showSeconds - Tick the seconds display. Default: false.
+ * @param className   - Additional CSS classes to apply to the container.
+ */
 export function BountyCountdown({ deadline, compact = false, showSeconds = false, className = '' }: BountyCountdownProps) {
   const [parts, setParts] = useState(() => getTimeParts(deadline));
 

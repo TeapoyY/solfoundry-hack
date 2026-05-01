@@ -7,6 +7,9 @@ import { cardHover } from '../../lib/animations';
 import { formatCurrency, LANG_COLORS } from '../../lib/utils';
 import { BountyCountdown } from './BountyCountdown';
 
+/**
+ * Tier badge (T1 / T2 / T3) with context-appropriate colour.
+ */
 function TierBadge({ tier }: { tier: string }) {
   const styles: Record<string, string> = {
     T1: 'bg-tier-t1/10 text-tier-t1 border border-tier-t1/20',
@@ -21,9 +24,17 @@ function TierBadge({ tier }: { tier: string }) {
 }
 
 interface BountyCardProps {
+  /** The bounty object to render. All rendering details are derived from this prop. */
   bounty: Bounty;
 }
 
+/**
+ * Card component for a single bounty in the grid view.
+ *
+ * Displays repo/name, issue number, title, language skill tags,
+ * reward, submission count, and a live countdown timer.
+ * Clicking the card navigates to the full bounty detail page.
+ */
 export function BountyCard({ bounty }: BountyCardProps) {
   const navigate = useNavigate();
 

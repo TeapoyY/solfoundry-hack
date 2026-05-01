@@ -6,8 +6,18 @@ import { BountyCard } from './BountyCard';
 import { useInfiniteBounties } from '../../hooks/useBounties';
 import { staggerContainer, staggerItem } from '../../lib/animations';
 
+/**
+ * Filter pills for language/skill category in the bounty grid.
+ */
 const FILTER_SKILLS = ['All', 'TypeScript', 'Rust', 'Solidity', 'Python', 'Go', 'JavaScript'];
 
+/**
+ * Bounty grid page section.
+ *
+ * Renders a live-searchable, filterable grid of all open bounties
+ * with skill-chip filters, status dropdown, and "Post a Bounty" CTA.
+ * Uses infinite scroll via `useInfiniteBounties` and debounced 300 ms search input.
+ */
 export function BountyGrid() {
   const [activeSkill, setActiveSkill] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('open');
