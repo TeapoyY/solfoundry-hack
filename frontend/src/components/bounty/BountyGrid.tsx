@@ -8,6 +8,10 @@ import { staggerContainer, staggerItem } from '../../lib/animations';
 
 const FILTER_SKILLS = ['All', 'TypeScript', 'Rust', 'Solidity', 'Python', 'Go', 'JavaScript'];
 
+/**
+ * BountyGrid displays a filterable, searchable grid of bounties.
+ * Supports skill filtering, status filtering, and server-side search via the useInfiniteBounties hook.
+ */
 export function BountyGrid() {
   const [activeSkill, setActiveSkill] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('open');
@@ -45,14 +49,15 @@ export function BountyGrid() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
             <input
+              id="bounty-search"
               type="text"
-              aria-label="Search bounties by title, description, or skill"
+              aria-label="Search bounties"
               placeholder="Search bounties..."
-              value={searchQuery}
+              value={debouncedSearch}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full sm:w-64 appearance-none bg-forge-800 border border-border rounded-lg pl-9 pr-8 py-2 text-sm text-text-secondary placeholder-text-muted focus:border-emerald outline-none transition-colors duration-150"
             />
-            {searchQuery && (
+            {debouncedSearch && (
               <button
                 onClick={() => setSearchQuery('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-text-muted hover:text-text-primary transition-colors"
@@ -133,7 +138,7 @@ export function BountyGrid() {
             </p>
             <p className="text-text-muted text-sm">
               {isSearching ? (
-                <button onClick={() => setSearchQuery('')} className="text-emerald hover:underline">
+                <button onClick={() => { setSearchQuery(''); setDebouncedSearch(''); }} className="text-emerald hover:underline">
                   Clear search
                 </button>
               ) : activeSkill !== 'All' ? (

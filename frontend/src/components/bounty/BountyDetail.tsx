@@ -13,6 +13,12 @@ interface BountyDetailProps {
   bounty: Bounty;
 }
 
+/**
+ * BountyDetail renders the full detail view for a single bounty.
+ * Includes description, requirements, submission form, reward card, and metadata sidebar.
+ *
+ * @param bounty - The bounty object to display
+ */
 export function BountyDetail({ bounty }: BountyDetailProps) {
   const { isAuthenticated } = useAuth();
   const [submitting, setSubmitting] = useState(false);

@@ -4,6 +4,7 @@ import { getTimeParts } from '../../lib/utils';
 
 export type CountdownUrgency = 'normal' | 'warning' | 'urgent' | 'expired';
 
+/** Determines the urgency level of a bounty deadline based on time remaining. */
 function getUrgency(expired: boolean, days: number, hours: number): CountdownUrgency {
   if (expired) return 'expired';
   if (days === 0 && hours < 1) return 'urgent';
@@ -42,13 +43,25 @@ interface BountyCountdownProps {
   deadline: string;
   /** Compact: single-line layout for cards. Default: false (detailed). */
   compact?: boolean;
+  /** Badge variant: icon-only or icon+text inline style. Default: undefined. */
+  variant?: 'badge';
   /** Show seconds tick. Default: false. */
   showSeconds?: boolean;
   /** Additional CSS classes. */
   className?: string;
 }
 
-export function BountyCountdown({ deadline, compact = false, showSeconds = false, className = '' }: BountyCountdownProps) {
+/**
+ * Countdown timer for bounty deadlines with real-time updates and urgency levels.
+ *
+ * @param deadline - ISO date string for the bounty deadline
+ * @param compact  - Single-line compact layout (e.g. inside a card). Default: false
+ * @param variant  - 'badge' renders an inline icon+text style suitable for badges. Default: undefined
+ * @param showSeconds - Include seconds in the countdown. Default: false
+ * @param className - Additional CSS classes
+ */
+
+export function BountyCountdown({ deadline, compact = false, variant, showSeconds = false, className = '' }: BountyCountdownProps) {
   const [parts, setParts] = useState(() => getTimeParts(deadline));
 
   useEffect(() => {
@@ -64,6 +77,21 @@ export function BountyCountdown({ deadline, compact = false, showSeconds = false
 
   if (compact) {
     const icon = <Clock className="w-3.5 h-3.5" />;
+    if (parts.expired) {
+      if (variant === 'badge') {
+        return (
+          <span className={`inline-flex items-center gap-1 font-mono text-xs ${urgencyStyles[urgency].text}`}>
+            <Clock className="w-3.5 h-3.5" />
+          </span>
+        );
+      }
+      return (
+        <span className={`inline-flex items-center gap-1 font-mono text-xs ${urgencyStyles[urgency].text}`}>
+          {icon}
+          Expired
+        </span>
+      );
+    }
     return (
       <span className={`inline-flex items-center gap-1 font-mono text-xs ${urgencyStyles[urgency].text}`}>
         {icon}
